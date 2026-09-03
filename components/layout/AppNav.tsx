@@ -73,6 +73,33 @@ const navItems = [
   },
 ]
 
+// App icon SVG for topbar (compact version)
+function AppIconLogo() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <rect width="28" height="28" rx="7" fill="url(#navIconGrad)"/>
+      {/* House roof */}
+      <path d="M7 14 L14 8 L21 14" fill="none" stroke="white" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
+      {/* House body */}
+      <rect x="9.5" y="14" width="9" height="7" rx="1" fill="white" opacity="0.92"/>
+      {/* Door */}
+      <rect x="12" y="17" width="4" height="4" rx="0.8" fill="url(#navIconGrad)"/>
+      {/* Book curve */}
+      <path d="M6 24 Q14 21.5 22 24" stroke="url(#goldNavGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+      <defs>
+        <linearGradient id="navIconGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#1a3ba0"/>
+          <stop offset="100%" stopColor="#2d1b8c"/>
+        </linearGradient>
+        <linearGradient id="goldNavGrad" x1="0" y1="0" x2="28" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#f59e0b"/>
+          <stop offset="100%" stopColor="#d97706"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
 export default function AppNav({ userEmail, displayName, lang, subscriptionStatus }: AppNavProps) {
   const pathname = usePathname()
   const router   = useRouter()
@@ -103,16 +130,19 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
         }}
       >
         {/* Logo */}
-        <Link href="/study" style={{ textDecoration: 'none' }}>
+        <Link href="/study" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <AppIconLogo />
           <span style={{
             fontWeight: 800,
-            fontSize: '1rem',
+            fontSize: '0.9rem',
             background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             backgroundClip: 'text',
+            lineHeight: 1.2,
           }}>
-            PA Real Estate Prep
+            Real Estate<br/>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>PA Exam</span>
           </span>
         </Link>
 

@@ -1,21 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import AchievementIcon, { ACHIEVEMENT_KEYFRAMES } from '@/components/achievements/AchievementIcon'
 
-export const metadata: Metadata = { title: 'Progress — PA Real Estate Prep' }
-
-const ACHIEVEMENT_ICONS: Record<string, string> = {
-  first_question: '🌱',
-  q50:            '📚',
-  q100:           '🎯',
-  q250:           '⭐',
-  q500:           '🏆',
-  streak_3:       '🔥',
-  streak_7:       '💥',
-  streak_30:      '🌟',
-  session_10:     '🎓',
-  session_50:     '🦅',
-}
+export const metadata: Metadata = { title: 'Progress — Real Estate PA Exam' }
 
 export default async function AchievementsPage() {
   const supabase = await createClient()
@@ -60,6 +48,9 @@ export default async function AchievementsPage() {
 
   return (
     <div>
+      {/* Inject achievement keyframes */}
+      <style dangerouslySetInnerHTML={{ __html: ACHIEVEMENT_KEYFRAMES }} />
+
       {/* ── Overall stats ── */}
       <div className="card">
         <div className="card-title">
@@ -84,7 +75,7 @@ export default async function AchievementsPage() {
           </div>
         </div>
 
-        {/* Level */}
+        {/* Level & XP */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 12,
@@ -99,7 +90,7 @@ export default async function AchievementsPage() {
               Level {progress?.level ?? 1} · {progress?.xp ?? 0} XP
             </div>
             <div className="xp-bar-wrap" style={{ marginTop: 4 }}>
-              <div className="xp-bar-fill" style={{ width: '40%' }} />
+              <div className="xp-bar-fill" style={{ width: `${Math.min(100, ((progress?.xp ?? 0) % 100))}%` }} />
             </div>
           </div>
         </div>
@@ -116,46 +107,65 @@ export default async function AchievementsPage() {
           </span>
         </div>
 
-        {/* Progress bar */}
-        <div className="prog-bar" style={{ marginBottom: 16 }}>
+        {/* Overall progress bar */}
+        <div className="prog-bar" style={{ marginBottom: 20 }}>
           <div
             className="prog-fill"
             style={{ width: `${pct}%`, background: 'linear-gradient(90deg,var(--accent),var(--accent2))' }}
           />
         </div>
 
-        {/* Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {/* Badge grid — 4 columns */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 12,
+        }}>
           {achievements.map((a) => {
             const isUnlocked = !!unlockedMap[a.id]
-            const icon = ACHIEVEMENT_ICONS[a.id] ?? '🏅'
             const name = isEs ? (a.title_es ?? a.title_en) : a.title_en
             const desc = isEs ? (a.description_es ?? a.description_en) : a.description_en
 
             return (
               <div
                 key={a.id}
+                title={`${name}: ${desc} (+${a.xp_reward} XP)`}
                 style={{
-                  background: isUnlocked
-                    ? 'linear-gradient(135deg,rgba(79,142,247,0.08),var(--surface2))'
-                    : 'var(--surface2)',
-                  border: `1px solid ${isUnlocked ? 'rgba(79,142,247,0.3)' : 'var(--border)'}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '10px 4px',
                   borderRadius: 'var(--radius-sm)',
-                  padding: '12px 10px',
-                  opacity: isUnlocked ? 1 : 0.5,
-                  transition: 'all 0.2s',
+                  background: isUnlocked
+                    ? 'linear-gradient(135deg,rgba(79,142,247,0.07),var(--surface2))'
+                    : 'var(--surface2)',
+                  border: `1px solid ${isUnlocked ? 'rgba(79,142,247,0.25)' : 'var(--border)'}`,
+                  cursor: 'default',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
                 }}
               >
-                <div style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: 6 }}>
-                  {isUnlocked ? icon : '🔒'}
-                </div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', textAlign: 'center', lineHeight: 1.3 }}>
+                <AchievementIcon
+                  achievementType={a.id}
+                  unlocked={isUnlocked}
+                  size={48}
+                />
+                <div style={{
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  color: isUnlocked ? 'var(--text)' : 'var(--text3)',
+                  textAlign: 'center',
+                  lineHeight: 1.3,
+                  wordBreak: 'break-word',
+                }}>
                   {name}
                 </div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text3)', textAlign: 'center', marginTop: 3, lineHeight: 1.3 }}>
-                  {desc}
-                </div>
-                <div style={{ textAlign: 'center', marginTop: 6, fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent)' }}>
+                <div style={{
+                  fontSize: '0.58rem',
+                  fontWeight: 700,
+                  color: 'var(--accent)',
+                  opacity: isUnlocked ? 1 : 0.4,
+                }}>
                   +{a.xp_reward} XP
                 </div>
               </div>

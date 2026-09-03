@@ -41,17 +41,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="card space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-slate-100">Welcome back</h2>
-        <p className="text-slate-500 text-sm mt-1">
+    <div className="card">
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Welcome back</h2>
+        <p style={{ color: 'var(--text3)', fontSize: '0.82rem', marginTop: 4 }}>
           Sign in to continue studying.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor="email" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
             Email
           </label>
           <input
@@ -67,14 +67,11 @@ function LoginForm() {
         </div>
 
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="password" className="block text-sm font-medium text-slate-400">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <label htmlFor="password" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)' }}>
               Password
             </label>
-            <Link
-              href="/forgot-password"
-              className="text-xs text-amber-500 hover:text-amber-400 transition-colors"
-            >
+            <Link href="/forgot-password" style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600 }}>
               Forgot password?
             </Link>
           </div>
@@ -91,19 +88,23 @@ function LoginForm() {
         </div>
 
         {error && (
-          <p className="text-red-400 text-sm bg-red-950/50 border border-red-800 rounded-lg px-3 py-2">
+          <div style={{
+            background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)',
+            borderRadius: 'var(--radius-xs)', padding: '10px 14px',
+            fontSize: '0.82rem', color: 'var(--danger)',
+          }}>
             {error}
-          </p>
+          </div>
         )}
 
-        <button type="submit" disabled={loading} className="btn-primary w-full">
+        <button type="submit" disabled={loading} className="btn btn-primary btn-full" style={{ opacity: loading ? 0.6 : 1 }}>
           {loading ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-slate-500">
+      <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text3)', marginTop: 16 }}>
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="text-amber-500 hover:text-amber-400 font-medium">
+        <Link href="/register" style={{ color: 'var(--accent)', fontWeight: 600 }}>
           Create one free
         </Link>
       </p>
