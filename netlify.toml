@@ -2,27 +2,5 @@
   command = "npm run build"
   publish = ".next"
 
-[build.environment]
-  NODE_VERSION = "20"
-  NEXT_TELEMETRY_DISABLED = "1"
-
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# Netlify Functions (server-side secrets — never exposed to browser)
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-  included_files = ["netlify/functions/**"]
-
-# Redirect for Next.js App Router
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/___netlify-handler"
-  status = 200
-
-# Rate-limit the AI proxy endpoint
-[[headers]]
-  for = "/.netlify/functions/gemini-proxy"
-  [headers.values]
-    X-Robots-Tag = "noindex"
