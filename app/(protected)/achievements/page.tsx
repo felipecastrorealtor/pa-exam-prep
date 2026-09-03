@@ -33,7 +33,7 @@ export default async function AchievementsPage() {
   // All achievements (definition table)
   const { data: allAchievements } = await supabase
     .from('achievements')
-    .select('id, name_en, name_es, description_en, description_es, xp_reward')
+    .select('id, title_en, title_es, description_en, description_es, xp_reward')
     .order('xp_reward')
 
   // User's unlocked achievements
@@ -75,7 +75,7 @@ export default async function AchievementsPage() {
         {achievements.map((a) => {
           const isUnlocked = !!unlockedMap[a.id]
           const icon = ACHIEVEMENT_ICONS[a.id] ?? '🏅'
-          const name = lang === 'es' ? (a.name_es ?? a.name_en) : a.name_en
+          const name = lang === 'es' ? (a.title_es ?? a.title_en) : a.title_en
           const desc = lang === 'es' ? (a.description_es ?? a.description_en) : a.description_en
 
           return (
