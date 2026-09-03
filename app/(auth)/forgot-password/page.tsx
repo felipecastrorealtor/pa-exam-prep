@@ -1,13 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail]   = useState('')
-  const [sent, setSent]     = useState(false)
-  const [error, setError]   = useState<string | null>(null)
+export const dynamic = 'force-dynamic'
+
+function ForgotPasswordForm() {
+  const [email, setEmail]     = useState('')
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
@@ -89,5 +91,13 @@ export default function ForgotPasswordPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ForgotPasswordForm />
+    </Suspense>
   )
 }

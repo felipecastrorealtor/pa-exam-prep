@@ -1,10 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function ResetPasswordPage() {
+export const dynamic = 'force-dynamic'
+
+function ResetPasswordForm() {
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm]   = useState('')
@@ -109,5 +111,13 @@ export default function ResetPasswordPage() {
         </button>
       </form>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
