@@ -12,13 +12,12 @@ function ForgotPasswordForm() {
   const [error, setError]     = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const supabase = createClient()
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
+    const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })

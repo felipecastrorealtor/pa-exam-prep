@@ -10,15 +10,13 @@ export const dynamic = 'force-dynamic'
 function RegisterForm() {
   const router = useRouter()
 
-  const [email, setEmail]           = useState('')
-  const [password, setPassword]     = useState('')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [accessCode, setAccessCode] = useState('')
-  const [error, setError]           = useState<string | null>(null)
-  const [loading, setLoading]       = useState(false)
-  const [success, setSuccess]       = useState(false)
-
-  const supabase = createClient()
+  const [accessCode, setAccessCode]   = useState('')
+  const [error, setError]             = useState<string | null>(null)
+  const [loading, setLoading]         = useState(false)
+  const [success, setSuccess]         = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +28,8 @@ function RegisterForm() {
       setLoading(false)
       return
     }
+
+    const supabase = createClient()
 
     // 1. Create Supabase auth user
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -55,7 +55,6 @@ function RegisterForm() {
       })
       const json = await res.json()
       if (!json.ok) {
-        // Code invalid — sign up still succeeded, show warning
         setError(
           `Account created! But access code "${accessCode}" is invalid or already used. ` +
           'You can enter a valid code in Settings after signing in.'
@@ -69,10 +68,8 @@ function RegisterForm() {
     setSuccess(true)
     setLoading(false)
 
-    // If email confirmation is enabled in Supabase, show "check email" message.
-    // If not, redirect directly.
     if (!signUpData.session) {
-      // Email confirmation required — stay on page, show success state
+      // Email confirmation required — stay on page
     } else {
       router.push('/study')
       router.refresh()
@@ -152,7 +149,6 @@ function RegisterForm() {
           />
         </div>
 
-        {/* Access code (optional) */}
         <div>
           <label htmlFor="code" className="block text-sm font-medium text-slate-400 mb-1.5">
             Access code{' '}
@@ -181,7 +177,6 @@ function RegisterForm() {
         </button>
       </form>
 
-      {/* Pricing reminder */}
       <div className="rounded-lg bg-slate-800/50 border border-slate-700 px-4 py-3 text-xs text-slate-400 space-y-1">
         <p>✅ 7-day free trial — explore everything</p>
         <p>💳 Then $20/month — cancel anytime</p>

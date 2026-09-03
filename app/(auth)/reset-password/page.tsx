@@ -14,17 +14,16 @@ function ResetPasswordForm() {
   const [loading, setLoading]   = useState(false)
   const [ready, setReady]       = useState(false)
 
-  const supabase = createClient()
-
-  // Supabase sends a hash fragment with the token — wait for auth state
+  // createClient() inside useEffect — never runs on the server
   useEffect(() => {
+    const supabase = createClient()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)
       }
     })
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -40,6 +39,7 @@ function ResetPasswordForm() {
     }
 
     setLoading(true)
+    const supabase = createClient()
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
