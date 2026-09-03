@@ -32,14 +32,19 @@ export default async function ProtectedLayout({
   if (!isActive) redirect('/subscribe')
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <AppNav
         userEmail={user.email ?? ''}
         displayName={profile?.display_name ?? ''}
         lang={profile?.preferred_lang ?? 'en'}
         subscriptionStatus={profile?.subscription_status ?? null}
       />
-      <main className="flex-1 container mx-auto px-4 py-6 max-w-5xl">
+      {/* top padding = topbar height, bottom padding = bottom nav height */}
+      <main style={{
+        maxWidth: 680,
+        margin: '0 auto',
+        padding: 'calc(var(--top-h) + 16px) 16px calc(var(--nav-h) + 24px)',
+      }}>
         {children}
       </main>
     </div>

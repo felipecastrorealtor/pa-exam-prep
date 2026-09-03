@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 
-export const metadata: Metadata = { title: 'Study' }
+export const metadata: Metadata = { title: 'Study — PA Real Estate Prep' }
 
 export default async function StudyPage() {
   const supabase = await createClient()
@@ -23,12 +24,12 @@ export default async function StudyPage() {
     .eq('user_id', user.id)
     .single()
 
-  // Mastery counts per unit (for progress bars)
+  // Mastery counts per unit
   const { data: mastery } = await supabase
     .from('question_attempts')
     .select('question_id, mastery, questions!inner(unit_id)')
     .eq('user_id', user.id)
-    .eq('mastery', 3) // mastered only
+    .eq('mastery', 3)
 
   const masteredByUnit: Record<number, number> = {}
   for (const m of mastery ?? []) {
@@ -36,98 +37,175 @@ export default async function StudyPage() {
     if (unitId) masteredByUnit[unitId] = (masteredByUnit[unitId] ?? 0) + 1
   }
 
-  return (
-    <div className="space-y-8">
-      {/* XP Bar */}
-      <section className="card">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className="text-amber-400 font-bold text-lg">Level {progress?.level ?? 1}</span>
-            <span className="text-slate-500 text-sm ml-2">· {progress?.xp ?? 0} XP</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm text-slate-400">
-            <span>🔥 {progress?.daily_streak ?? 0} day streak</span>
-            <span>·</span>
-            <span>{progress?.today_questions ?? 0} / {progress?.daily_goal ?? 20} today</span>
-          </div>
-        </div>
-        <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-amber-500 rounded-full transition-all"
-            style={{ width: `${Math.min(100, ((progress?.today_questions ?? 0) / (progress?.daily_goal ?? 20)) * 100)}%` }}
-          />
-        </div>
-      </section>
+  const todayQ   = progress?.today_questions  ?? 0
+  const dailyGoal = progress?.daily_goal      ?? 20
+  const pct       = Math.min(100, (todayQ / dailyGoal) * 100)
+  const streak    = progress?.daily_streak     ?? 0
+  const totalQ    = progress?.total_questions  ?? 0
+  const totalC    = progress?.total_correct    ?? 0
+  const accuracy  = totalQ ? Math.round((totalC / totalQ) * 100) : null
 
-      {/* Units grid */}
-      <section>
-        <h2 className="text-lg font-semibold text-slate-200 mb-4">Choose a Unit</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(units ?? []).map((unit) => (
-            <a
+  return (
+    <div>
+      {/* ── Readiness / XP card ── */}
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '4px 0' }}>
+          {/* Readiness circle */}
+          <div style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+            <svg width="72" height="72" viewBox="0 0 72 72" style={{ transform: 'rotate(-90deg)' }}>
+              <circle
+                cx="36" cy="36" r="30"
+                fill="none" stroke="var(--border)" strokeWidth="6"
+              />
+              <circle
+                cx="36" cy="36" r="30"
+                fill="none"
+                stroke="var(--success)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="188.5"
+                strokeDashoffset={188.5 - (188.5 * pct) / 100}
+                style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+              />
+            </svg>
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1rem', fontWeight: 800, color: 'var(--text)',
+            }}>
+              {Math.round(pct)}%
+            </div>
+          </div>
+
+          {/* Info */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
+              Exam Readiness
+            </div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text2)', marginBottom: 8 }}>
+              Level {progress?.level ?? 1} · {progress?.xp ?? 0} XP
+            </div>
+            <div className="xp-bar-wrap">
+              <div
+                className="xp-bar-fill"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text3)', marginTop: 2 }}>
+              <span>{todayQ} / {dailyGoal} today</span>
+              <span>🔥 {streak} day streak</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stat pills ── */}
+      <div className="stat-row">
+        <div className="stat-pill" style={{ borderColor: 'rgba(245,158,11,0.3)' }}>
+          <div className="stat-num" style={{ color: 'var(--warning)' }}>{streak}</div>
+          <div className="stat-label">🔥 Streak</div>
+        </div>
+        <div className="stat-pill" style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
+          <div className="stat-num" style={{ color: 'var(--success)' }}>
+            {accuracy !== null ? `${accuracy}%` : '—'}
+          </div>
+          <div className="stat-label">✅ Accuracy</div>
+        </div>
+        <div className="stat-pill" style={{ borderColor: 'rgba(79,142,247,0.3)' }}>
+          <div className="stat-num" style={{ color: 'var(--accent)' }}>{totalQ}</div>
+          <div className="stat-label">📄 Questions</div>
+        </div>
+      </div>
+
+      {/* ── Today card ── */}
+      <div className="today-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+            📅 {progress?.preferred_lang === 'es' ? 'Meta de Hoy' : "Today's Goal"}
+          </div>
+          <div style={{ fontSize: '1.2rem' }}>{streak > 0 ? '🔥' : '⭐'}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: 'var(--accent)',
+              borderRadius: 99,
+              width: `${pct}%`,
+              transition: 'width 0.4s',
+            }} />
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+            {todayQ} / {dailyGoal} Q
+          </div>
+        </div>
+        <Link href="/study/quick" className="btn btn-primary btn-full">
+          ⚡ Quick Practice
+        </Link>
+      </div>
+
+      {/* ── Units grid ── */}
+      <div className="section-header">
+        <div className="section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+          Study by Unit
+        </div>
+      </div>
+
+      <div className="unit-grid">
+        {(units ?? []).map((unit) => {
+          const mastered = masteredByUnit[unit.id] ?? 0
+          const mastPct  = Math.min(100, (mastered / 15) * 100)
+          return (
+            <Link
               key={unit.id}
               href={`/study/${unit.id}`}
-              className="card hover:border-amber-500/50 hover:bg-slate-800/80 transition-all group cursor-pointer"
+              className="unit-card"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-xs font-mono text-slate-500 mb-1 block">
-                    Unit {unit.id}
-                  </span>
-                  <h3 className="text-sm font-medium text-slate-200 group-hover:text-amber-400 transition-colors leading-snug">
-                    {unit.title_en}
-                  </h3>
-                </div>
-                <span className="text-slate-600 group-hover:text-amber-500 transition-colors ml-2 mt-0.5">
-                  →
-                </span>
+              <div style={{ fontSize: '0.62rem', color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Unit {unit.id}
               </div>
-              {masteredByUnit[unit.id] !== undefined && (
-                <div className="mt-3">
-                  <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 rounded-full"
-                      style={{
-                        width: `${Math.min(100, ((masteredByUnit[unit.id] ?? 0) / 20) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-600 mt-1">
-                    {masteredByUnit[unit.id]} mastered
-                  </p>
-                </div>
-              )}
-            </a>
-          ))}
-        </div>
-      </section>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, margin: '4px 0', lineHeight: 1.3, color: 'var(--text)' }}>
+                {unit.title_en}
+              </div>
+              <div className="prog-bar" style={{ marginTop: 6 }}>
+                <div
+                  className="prog-fill"
+                  style={{ width: `${mastPct}%`, background: 'var(--accent)' }}
+                />
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text3)' }}>
+                {mastered} mastered
+              </div>
+            </Link>
+          )
+        })}
+      </div>
 
-      {/* Overall stats */}
-      <section className="card">
-        <h2 className="text-sm font-medium text-slate-400 mb-4 uppercase tracking-wider">
-          Overall Progress
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* ── Overall stats ── */}
+      <div className="card" style={{ marginTop: 4 }}>
+        <div className="card-title">Overall Progress</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, textAlign: 'center' }}>
           {[
-            { label: 'Questions Answered', value: progress?.total_questions ?? 0 },
-            { label: 'Correct', value: progress?.total_correct ?? 0 },
-            {
-              label: 'Accuracy',
-              value: progress?.total_questions
-                ? `${Math.round(((progress.total_correct ?? 0) / progress.total_questions) * 100)}%`
-                : '—',
-            },
-            { label: 'Streak', value: `${progress?.daily_streak ?? 0}d` },
+            { label: 'Answered',   value: totalQ },
+            { label: 'Correct',    value: totalC },
+            { label: 'Accuracy',   value: accuracy !== null ? `${accuracy}%` : '—' },
+            { label: 'Streak',     value: `${streak}d` },
           ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl font-bold text-slate-100 tabular-nums">
+            <div key={stat.label}>
+              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)' }}>
                 {stat.value}
               </div>
-              <div className="text-xs text-slate-500 mt-1">{stat.label}</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text3)', marginTop: 2 }}>
+                {stat.label}
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
     </div>
   )
 }

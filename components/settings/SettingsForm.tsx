@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import clsx from 'clsx'
 
 interface Props {
   initialLang: 'en' | 'es'
@@ -10,24 +9,6 @@ interface Props {
   initialExamDate: string | null
   subscriptionStatus: string
   subscriptionExpires: string | null
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  active:      'Active',
-  trialing:    'Trial',
-  free_access: 'Free Access',
-  past_due:    'Past Due',
-  canceled:    'Canceled',
-  incomplete:  'Incomplete',
-  paused:      'Paused',
-}
-
-const STATUS_COLOR: Record<string, string> = {
-  active:      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  trialing:    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  free_access: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-  past_due:    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  canceled:    'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
 }
 
 export default function SettingsForm({
@@ -45,6 +26,12 @@ export default function SettingsForm({
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
   const [error, setError]         = useState('')
+
+  const isEs = lang === 'es'
+
+  const daysUntilExam = examDate
+    ? Math.max(0, Math.ceil((new Date(examDate).getTime() - Date.now()) / 86400000))
+    : null
 
   const save = async () => {
     setSaving(true)
@@ -77,140 +64,154 @@ export default function SettingsForm({
       const { url } = await res.json()
       if (url) window.location.href = url
     } catch {
-      setError('Could not open billing portal')
+      setError(isEs ? 'No se pudo abrir el portal de facturación' : 'Could not open billing portal')
     }
   }
 
   return (
-    <div className="space-y-8">
-
-      {/* Subscription card */}
-      <section className="card p-5 space-y-3">
-        <h2 className="font-semibold text-gray-900 dark:text-white">Subscription</h2>
-        <div className="flex items-center gap-3">
-          <span className={clsx(
-            'text-xs font-semibold px-2.5 py-1 rounded-full',
-            STATUS_COLOR[subscriptionStatus] ?? STATUS_COLOR.canceled
-          )}>
-            {STATUS_LABEL[subscriptionStatus] ?? subscriptionStatus}
-          </span>
-          {subscriptionExpires && (
-            <span className="text-xs text-gray-500">
-              {subscriptionStatus === 'free_access' ? 'Expires' : 'Renews'}{' '}
-              {new Date(subscriptionExpires).toLocaleDateString()}
-            </span>
-          )}
-        </div>
-        {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'past_due') && (
-          <button onClick={manageSubscription} className="btn-ghost text-sm">
-            Manage billing →
-          </button>
-        )}
-        {(subscriptionStatus === 'canceled' || subscriptionStatus === 'incomplete') && (
-          <a href="/subscribe" className="btn-primary text-sm inline-block">
-            Subscribe — $20/mo
-          </a>
-        )}
-      </section>
-
-      {/* Preferences */}
-      <section className="card p-5 space-y-5">
-        <h2 className="font-semibold text-gray-900 dark:text-white">Preferences</h2>
-
-        {/* Language */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Study language
-          </label>
-          <div className="flex gap-3">
-            {(['en', 'es'] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={clsx(
-                  'flex-1 py-2 rounded-lg border-2 text-sm font-semibold transition-colors',
-                  lang === l
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                )}
-              >
-                {l === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Daily goal */}
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Daily goal
-            </label>
-            <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
-              {dailyGoal} questions
-            </span>
-          </div>
-          <input
-            type="range"
-            min={5}
-            max={100}
-            step={5}
-            value={dailyGoal}
-            onChange={(e) => setDailyGoal(Number(e.target.value))}
-            className="w-full accent-blue-500"
-          />
-          <div className="flex justify-between text-xs text-gray-400">
-            <span>5</span>
-            <span>100</span>
-          </div>
+    <div>
+      {/* ── Study Plan ── */}
+      <div className="card">
+        <div className="card-title">
+          📅 {isEs ? 'Plan de Estudio' : 'Study Plan'}
         </div>
 
         {/* Exam date */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Exam date (optional)
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: '0.82rem', color: 'var(--text2)', display: 'block', marginBottom: 6 }}>
+            {isEs ? 'Fecha del examen:' : 'Exam date:'}
           </label>
           <input
             type="date"
             value={examDate}
             onChange={(e) => setExamDate(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
-            className="input w-full"
+            style={{
+              width: '100%', padding: '9px 12px',
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-xs)', color: 'var(--text)',
+              fontSize: '0.9rem',
+            }}
           />
-          {examDate && (
-            <p className="text-xs text-gray-500">
-              {Math.max(0, Math.ceil((new Date(examDate).getTime() - Date.now()) / 86400000))} days until your exam
-            </p>
+          {daysUntilExam !== null && (
+            <div style={{
+              marginTop: 10, textAlign: 'center',
+              fontSize: '2rem', fontWeight: 800, color: 'var(--accent)',
+            }}>
+              {daysUntilExam}
+              <div style={{ fontSize: '0.75rem', color: 'var(--text3)', fontWeight: 600, marginTop: 2 }}>
+                {isEs ? 'días para el examen' : 'days until exam'}
+              </div>
+            </div>
           )}
         </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {/* Daily goal */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <label style={{ fontSize: '0.82rem', color: 'var(--text2)' }}>
+              {isEs ? 'Meta diaria:' : 'Daily goal:'}
+            </label>
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent)' }}>
+              {dailyGoal} Q
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[10, 20, 30, 50].map((g) => (
+              <button
+                key={g}
+                onClick={() => setDailyGoal(g)}
+                className="qcount-btn"
+                style={{
+                  background: dailyGoal === g ? 'var(--accent)' : 'var(--surface2)',
+                  borderColor: dailyGoal === g ? 'var(--accent)' : 'var(--border)',
+                  color: dailyGoal === g ? '#fff' : 'var(--text2)',
+                }}
+              >
+                {g} Q
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-        <button
-          onClick={save}
-          disabled={saving}
-          className={clsx(
-            'btn-primary w-full',
-            saving && 'opacity-60 cursor-wait'
-          )}
-        >
-          {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
-        </button>
-      </section>
+      {/* ── Language ── */}
+      <div className="card">
+        <div className="card-title">
+          🌐 {isEs ? 'Idioma' : 'Language'}
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['en', 'es'] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 'var(--radius-sm)',
+                background: lang === l
+                  ? 'linear-gradient(135deg,var(--accent),var(--accent2))'
+                  : 'var(--surface2)',
+                border: `1px solid ${lang === l ? 'transparent' : 'var(--border)'}`,
+                color: lang === l ? '#fff' : 'var(--text2)',
+                fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+            >
+              {l === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      {/* Danger zone */}
-      <section className="card p-5 border-red-200 dark:border-red-900/50 space-y-3">
-        <h2 className="font-semibold text-red-600 dark:text-red-400">Account</h2>
-        <p className="text-sm text-gray-500">
-          To delete your account or reset all progress, contact support.
+      {/* ── Subscription management ── */}
+      {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'past_due') && (
+        <div className="card">
+          <div className="card-title">💳 {isEs ? 'Facturación' : 'Billing'}</div>
+          <button
+            onClick={manageSubscription}
+            className="btn btn-ghost btn-full"
+          >
+            {isEs ? 'Administrar facturación →' : 'Manage billing →'}
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div style={{
+          background: 'rgba(239,68,68,0.1)', border: '1px solid var(--danger)',
+          borderRadius: 'var(--radius-sm)', padding: '10px 14px',
+          fontSize: '0.82rem', color: 'var(--danger)', marginBottom: 8,
+        }}>
+          {error}
+        </div>
+      )}
+
+      {/* Save */}
+      <button
+        onClick={save}
+        disabled={saving}
+        className="btn btn-primary btn-full"
+        style={{ opacity: saving ? 0.6 : 1 }}
+      >
+        {saving ? (isEs ? 'Guardando…' : 'Saving…') : saved ? '✓ Saved!' : (isEs ? 'Guardar cambios' : 'Save changes')}
+      </button>
+
+      {/* Account */}
+      <div className="card" style={{ marginTop: 12, borderColor: 'rgba(239,68,68,0.2)' }}>
+        <div className="card-title" style={{ color: 'var(--danger)' }}>
+          {isEs ? 'Cuenta' : 'Account'}
+        </div>
+        <p style={{ fontSize: '0.82rem', color: 'var(--text3)', marginBottom: 10 }}>
+          {isEs
+            ? 'Para eliminar tu cuenta o reiniciar el progreso, contacta soporte.'
+            : 'To delete your account or reset all progress, contact support.'}
         </p>
         <a
-          href="mailto:support@yourapp.com"
-          className="text-sm text-red-500 hover:text-red-600 underline"
+          href="mailto:support@repaexam.com"
+          style={{ fontSize: '0.82rem', color: 'var(--danger)', textDecoration: 'underline' }}
         >
-          Contact support →
+          {isEs ? 'Contactar soporte →' : 'Contact support →'}
         </a>
-      </section>
+      </div>
     </div>
   )
 }

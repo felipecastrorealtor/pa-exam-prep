@@ -12,21 +12,74 @@ interface AppNavProps {
   subscriptionStatus: string | null
 }
 
-const navLinks = [
-  { href: '/study',        label: 'Study',        labelEs: 'Estudiar' },
-  { href: '/flashcards',   label: 'Flashcards',   labelEs: 'Tarjetas' },
-  { href: '/glossary',     label: 'Glossary',     labelEs: 'Glosario' },
-  { href: '/achievements', label: 'Achievements', labelEs: 'Logros' },
+// Bottom nav items matching the original app
+const navItems = [
+  {
+    href: '/study',
+    labelEn: 'Study',
+    labelEs: 'Estudiar',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 0 3-3h7z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/flashcards',
+    labelEn: 'Flashcards',
+    labelEs: 'Tarjetas',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+        <polyline points="2 17 12 22 22 17"/>
+        <polyline points="2 12 12 17 22 12"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/glossary',
+    labelEn: 'Glossary',
+    labelEs: 'Glosario',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/achievements',
+    labelEn: 'Progress',
+    labelEs: 'Progreso',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/settings',
+    labelEn: 'Profile',
+    labelEs: 'Perfil',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+    ),
+  },
 ]
 
 export default function AppNav({ userEmail, displayName, lang, subscriptionStatus }: AppNavProps) {
-  const pathname  = usePathname()
-  const router    = useRouter()
-  const [open, setOpen] = useState(false)
-  const supabase  = createClient()
+  const pathname = usePathname()
+  const router   = useRouter()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const supabase = createClient()
 
-  const isEs    = lang === 'es'
-  const isAdmin = false // fetched separately if needed
+  const isEs = lang === 'es'
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -34,105 +87,182 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
     router.refresh()
   }
 
-  const statusBadge: Record<string, { label: string; cls: string }> = {
-    trialing:    { label: 'Trial',    cls: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-    active:      { label: 'Active',   cls: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
-    free_access: { label: '30d Free', cls: 'bg-amber-500/20 text-amber-400 border-amber-500/30' },
-    past_due:    { label: 'Past Due', cls: 'bg-red-500/20 text-red-400 border-red-500/30' },
-    canceled:    { label: 'Canceled', cls: 'bg-slate-500/20 text-slate-400 border-slate-500/30' },
-  }
-
-  const badge = subscriptionStatus ? statusBadge[subscriptionStatus] : null
+  const initials = (displayName || userEmail || '?')[0].toUpperCase()
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-sm sticky top-0 z-40">
-      <div className="container mx-auto px-4 max-w-5xl h-14 flex items-center justify-between">
+    <>
+      {/* ── TOPBAR ── */}
+      <header
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0,
+          height: 'var(--top-h)',
+          background: 'var(--surface)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 16px', zIndex: 100, gap: 10,
+        }}
+      >
         {/* Logo */}
-        <Link href="/study" className="flex items-center gap-2 text-amber-400 font-bold text-sm">
-          🏠 <span className="hidden sm:inline">PA Exam Prep</span>
+        <Link href="/study" style={{ textDecoration: 'none' }}>
+          <span style={{
+            fontWeight: 800,
+            fontSize: '1rem',
+            background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            PA Real Estate Prep
+          </span>
         </Link>
 
-        {/* Desktop nav links */}
-        <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((l) => {
-            const active = pathname.startsWith(l.href)
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                  active
-                    ? 'bg-amber-500/10 text-amber-400'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                }`}
-              >
-                {isEs ? l.labelEs : l.label}
-              </Link>
-            )
-          })}
-        </div>
-
-        {/* Right side */}
-        <div className="flex items-center gap-3">
-          {badge && (
-            <span className={`hidden sm:inline text-xs font-medium px-2 py-0.5 rounded-full border ${badge.cls}`}>
-              {badge.label}
+        {/* Right side: subscription badge + user menu */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {subscriptionStatus && (
+            <span style={{
+              fontSize: '0.65rem',
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 99,
+              background:
+                subscriptionStatus === 'active'      ? 'rgba(34,197,94,0.15)'  :
+                subscriptionStatus === 'trialing'     ? 'rgba(79,142,247,0.15)' :
+                subscriptionStatus === 'free_access'  ? 'rgba(245,158,11,0.15)' :
+                'rgba(92,99,128,0.2)',
+              color:
+                subscriptionStatus === 'active'      ? 'var(--success)'  :
+                subscriptionStatus === 'trialing'     ? 'var(--accent)'   :
+                subscriptionStatus === 'free_access'  ? 'var(--warning)'  :
+                'var(--text3)',
+              border: '1px solid currentColor',
+              letterSpacing: '0.04em',
+            }}>
+              {subscriptionStatus === 'active'     ? 'Active'   :
+               subscriptionStatus === 'trialing'   ? 'Trial'    :
+               subscriptionStatus === 'free_access'? '30d Free' : subscriptionStatus}
             </span>
           )}
 
-          {/* User menu */}
-          <div className="relative">
+          {/* Avatar / menu */}
+          <div style={{ position: 'relative' }}>
             <button
-              onClick={() => setOpen(!open)}
-              className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 hover:border-amber-500/50 transition-colors"
+              onClick={() => setMenuOpen(!menuOpen)}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
+                border: 'none', cursor: 'pointer',
+                color: '#fff', fontWeight: 800, fontSize: '0.9rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
             >
-              {(displayName || userEmail || '?')[0].toUpperCase()}
+              {initials}
             </button>
 
-            {open && (
+            {menuOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-                <div className="absolute right-0 top-10 z-20 w-52 card !p-2 shadow-xl border-slate-700">
-                  <div className="px-3 py-2 border-b border-slate-800 mb-1">
-                    <p className="text-xs font-medium text-slate-200 truncate">{displayName || userEmail}</p>
-                    <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 10 }}
+                  onClick={() => setMenuOpen(false)}
+                />
+                <div style={{
+                  position: 'absolute', right: 0, top: 44, zIndex: 20,
+                  width: 200,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  boxShadow: 'var(--card-shadow)',
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    padding: '10px 14px',
+                    borderBottom: '1px solid var(--border)',
+                    marginBottom: 4,
+                  }}>
+                    <p style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {displayName || userEmail}
+                    </p>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {userEmail}
+                    </p>
                   </div>
-                  <Link href="/settings" onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
-                    ⚙️ Settings
+                  <Link href="/settings" onClick={() => setMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', fontSize: '0.85rem', color: 'var(--text2)', textDecoration: 'none' }}>
+                    ⚙️ {isEs ? 'Configuración' : 'Settings'}
                   </Link>
-                  <Link href="/subscribe" onClick={() => setOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800 rounded-lg transition-colors">
-                    💳 Subscription
+                  <Link href="/subscribe" onClick={() => setMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', fontSize: '0.85rem', color: 'var(--text2)', textDecoration: 'none' }}>
+                    💳 {isEs ? 'Suscripción' : 'Subscription'}
                   </Link>
-                  <button onClick={handleSignOut}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-950/30 rounded-lg transition-colors">
-                    🚪 Sign out
+                  <button
+                    onClick={handleSignOut}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '9px 14px', fontSize: '0.85rem',
+                      color: 'var(--danger)', background: 'transparent',
+                      border: 'none', cursor: 'pointer', textAlign: 'left',
+                      borderTop: '1px solid var(--border)', marginTop: 4,
+                    }}
+                  >
+                    🚪 {isEs ? 'Cerrar sesión' : 'Sign out'}
                   </button>
                 </div>
               </>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Mobile nav (bottom bar) */}
-      <div className="md:hidden border-t border-slate-800 flex">
-        {navLinks.map((l) => {
-          const active = pathname.startsWith(l.href)
+      {/* ── BOTTOM NAV ── */}
+      <nav
+        style={{
+          position: 'fixed',
+          bottom: 0, left: 0, right: 0,
+          height: 'var(--nav-h)',
+          background: 'rgba(26,29,39,0.92)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+          zIndex: 100,
+          padding: '0 4px',
+        }}
+      >
+        {navItems.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
-              key={l.href}
-              href={l.href}
-              className={`flex-1 py-2.5 text-center text-xs transition-colors ${
-                active ? 'text-amber-400' : 'text-slate-500'
-              }`}
+              key={item.href}
+              href={item.href}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                color: active ? 'var(--accent)' : 'var(--text3)',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                minWidth: 56, flex: 1,
+                background: active
+                  ? 'linear-gradient(135deg,rgba(79,142,247,0.18),rgba(124,92,252,0.12))'
+                  : 'transparent',
+              }}
             >
-              {isEs ? l.labelEs : l.label}
+              <span style={{
+                display: 'flex',
+                transform: active ? 'scale(1.15)' : 'scale(1)',
+                transition: 'transform 0.2s',
+              }}>
+                {item.icon}
+              </span>
+              <span style={{
+                fontSize: '0.62rem',
+                fontWeight: 700,
+                letterSpacing: '0.03em',
+              }}>
+                {isEs ? item.labelEs : item.labelEn}
+              </span>
             </Link>
           )
         })}
-      </div>
-    </nav>
+      </nav>
+    </>
   )
 }

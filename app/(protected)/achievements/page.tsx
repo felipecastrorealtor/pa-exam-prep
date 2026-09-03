@@ -1,9 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
-import clsx from 'clsx'
 
-export const metadata: Metadata = { title: 'Achievements — PA Exam Prep' }
+export const metadata: Metadata = { title: 'Progress — PA Real Estate Prep' }
 
 const ACHIEVEMENT_ICONS: Record<string, string> = {
   first_question: '🌱',
@@ -29,90 +28,140 @@ export default async function AchievementsPage() {
     .eq('id', user.id)
     .single()
   const lang = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
+  const isEs = lang === 'es'
 
-  // All achievements (definition table)
   const { data: allAchievements } = await supabase
     .from('achievements')
     .select('id, title_en, title_es, description_en, description_es, xp_reward')
     .order('xp_reward')
 
-  // User's unlocked achievements
   const { data: unlocked } = await supabase
     .from('user_achievements')
     .select('achievement_id, unlocked_at')
     .eq('user_id', user.id)
+
+  const { data: progress } = await supabase
+    .from('user_progress')
+    .select('xp, level, daily_streak, total_questions, total_correct')
+    .eq('user_id', user.id)
+    .single()
 
   const unlockedMap: Record<string, string> = {}
   for (const u of unlocked ?? []) {
     unlockedMap[u.achievement_id] = u.unlocked_at
   }
 
-  const achievements = allAchievements ?? []
+  const achievements  = allAchievements ?? []
   const unlockedCount = achievements.filter((a) => unlockedMap[a.id]).length
+  const pct           = achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0
+  const totalQ  = progress?.total_questions ?? 0
+  const totalC  = progress?.total_correct   ?? 0
+  const accuracy = totalQ ? Math.round((totalC / totalQ) * 100) : null
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {lang === 'es' ? 'Logros' : 'Achievements'}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {unlockedCount} / {achievements.length}{' '}
-          {lang === 'es' ? 'desbloqueados' : 'unlocked'}
-        </p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-amber-500 rounded-full transition-all duration-700"
-          style={{ width: `${achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}%` }}
-        />
-      </div>
-
-      {/* Grid */}
-      <div className="grid sm:grid-cols-2 gap-3">
-        {achievements.map((a) => {
-          const isUnlocked = !!unlockedMap[a.id]
-          const icon = ACHIEVEMENT_ICONS[a.id] ?? '🏅'
-          const name = lang === 'es' ? (a.title_es ?? a.title_en) : a.title_en
-          const desc = lang === 'es' ? (a.description_es ?? a.description_en) : a.description_en
-
-          return (
-            <div
-              key={a.id}
-              className={clsx(
-                'card p-4 flex items-start gap-3 transition-all',
-                isUnlocked
-                  ? 'border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10'
-                  : 'opacity-50 grayscale'
-              )}
-            >
-              <div className={clsx(
-                'text-3xl flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center',
-                isUnlocked ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-gray-100 dark:bg-gray-800'
-              )}>
-                {isUnlocked ? icon : '🔒'}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                    {name}
-                  </p>
-                  <span className="flex-shrink-0 text-xs text-amber-600 dark:text-amber-400 font-medium">
-                    +{a.xp_reward} XP
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{desc}</p>
-                {isUnlocked && unlockedMap[a.id] && (
-                  <p className="text-xs text-amber-500 mt-1">
-                    {new Date(unlockedMap[a.id]).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
+    <div>
+      {/* ── Overall stats ── */}
+      <div className="card">
+        <div className="card-title">
+          {isEs ? 'Estadísticas Globales' : 'Overall Stats'}
+        </div>
+        <div className="stat-row">
+          <div className="stat-pill">
+            <div className="stat-num" style={{ color: 'var(--accent)' }}>{totalQ}</div>
+            <div className="stat-label">{isEs ? 'Total' : 'Answered'}</div>
+          </div>
+          <div className="stat-pill">
+            <div className="stat-num" style={{ color: 'var(--success)' }}>
+              {accuracy !== null ? `${accuracy}%` : '—'}
             </div>
-          )
-        })}
+            <div className="stat-label">{isEs ? 'Precisión' : 'Accuracy'}</div>
+          </div>
+          <div className="stat-pill">
+            <div className="stat-num" style={{ color: 'var(--warning)' }}>
+              {progress?.daily_streak ?? 0}
+            </div>
+            <div className="stat-label">🔥 {isEs ? 'Racha' : 'Streak'}</div>
+          </div>
+        </div>
+
+        {/* Level */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
+          <div style={{
+            width: 40, height: 40, borderRadius: 12,
+            background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '1.2rem',
+          }}>
+            {(progress?.level ?? 1) >= 10 ? '🏆' : (progress?.level ?? 1) >= 5 ? '⭐' : '🌱'}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)' }}>
+              Level {progress?.level ?? 1} · {progress?.xp ?? 0} XP
+            </div>
+            <div className="xp-bar-wrap" style={{ marginTop: 4 }}>
+              <div className="xp-bar-fill" style={{ width: '40%' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Achievements ── */}
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div className="card-title" style={{ marginBottom: 0 }}>
+            🏆 {isEs ? 'Logros' : 'Achievements'}
+          </div>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text3)', fontWeight: 600 }}>
+            {unlockedCount} / {achievements.length}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="prog-bar" style={{ marginBottom: 16 }}>
+          <div
+            className="prog-fill"
+            style={{ width: `${pct}%`, background: 'linear-gradient(90deg,var(--accent),var(--accent2))' }}
+          />
+        </div>
+
+        {/* Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {achievements.map((a) => {
+            const isUnlocked = !!unlockedMap[a.id]
+            const icon = ACHIEVEMENT_ICONS[a.id] ?? '🏅'
+            const name = isEs ? (a.title_es ?? a.title_en) : a.title_en
+            const desc = isEs ? (a.description_es ?? a.description_en) : a.description_en
+
+            return (
+              <div
+                key={a.id}
+                style={{
+                  background: isUnlocked
+                    ? 'linear-gradient(135deg,rgba(79,142,247,0.08),var(--surface2))'
+                    : 'var(--surface2)',
+                  border: `1px solid ${isUnlocked ? 'rgba(79,142,247,0.3)' : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '12px 10px',
+                  opacity: isUnlocked ? 1 : 0.5,
+                  transition: 'all 0.2s',
+                }}
+              >
+                <div style={{ fontSize: '1.8rem', textAlign: 'center', marginBottom: 6 }}>
+                  {isUnlocked ? icon : '🔒'}
+                </div>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', textAlign: 'center', lineHeight: 1.3 }}>
+                  {name}
+                </div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text3)', textAlign: 'center', marginTop: 3, lineHeight: 1.3 }}>
+                  {desc}
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 6, fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent)' }}>
+                  +{a.xp_reward} XP
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
