@@ -21,13 +21,18 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // Never reveal whether an account exists for this address (user enumeration).
+    // Log the real reason server-side; tell the client the same thing either way.
     if (error) {
       console.error('[forgot-password] generateLink error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ ok: true })
     }
 
     const link = data.properties?.action_link
-    if (!link) return NextResponse.json({ error: 'Could not generate reset link' }, { status: 500 })
+    if (!link) {
+      console.error('[forgot-password] no action_link returned')
+      return NextResponse.json({ ok: true })
+    }
 
     const html = `
           <div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;background:#fff">
