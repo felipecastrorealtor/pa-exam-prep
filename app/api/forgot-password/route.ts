@@ -85,8 +85,8 @@ export async function POST(req: NextRequest) {
         res = await send(FALLBACK)
         if (!res.ok) {
           const err2 = await res.json().catch(() => ({} as any))
-          console.error('[forgot-password] fallback also failed:', err2)
-          return NextResponse.json({ error: err2?.message ?? 'Failed to send email' }, { status: 500 })
+          console.error('[forgot-password] fallback sender also failed:', err2)
+          // fall through to the Supabase fallback below
         }
       } else {
         console.error('[forgot-password] Resend error:', err)
