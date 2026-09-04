@@ -159,7 +159,7 @@ const FEATURES_ES: Feature[] = [
 
 const T = {
   en: {
-    navSignIn: 'Sign in', navTrial: 'Start free trial',
+    navSignIn: 'Sign in', navSignUp: 'Sign up',
     heroBadge: '7-day free trial · No credit card required',
     heroH1a: 'Get Ready to Pass the', heroH1b: 'PA Real Estate Exam',
     heroSub: '321 practice questions with bilingual explanations, spaced-repetition flashcards, AI tutoring, and progress tracking — everything you need to walk in confident.',
@@ -186,7 +186,7 @@ const T = {
     footerSignIn: 'Sign in', footerSubscribe: 'Subscribe',
   },
   es: {
-    navSignIn: 'Iniciar sesión', navTrial: 'Prueba gratuita',
+    navSignIn: 'Iniciar sesión', navSignUp: 'Registrarse',
     heroBadge: 'Prueba de 7 días · Sin tarjeta de crédito',
     heroH1a: 'Prepárate para Pasar el', heroH1b: 'Examen Inmobiliario de PA',
     heroSub: '321 preguntas de práctica con explicaciones bilingües, flashcards de repetición espaciada, tutoría con IA y seguimiento de progreso — todo lo que necesitas para entrar con confianza.',
@@ -220,7 +220,7 @@ export default function LandingContent() {
   const year = new Date().getFullYear()
 
   return (
-    <div className="lpage-root" style={{ minHeight: '100vh', background: '#0a0d14', color: '#f1f5f9' }}>
+    <div style={{ minHeight: '100vh', background: '#0a0d14', color: '#f1f5f9' }}>
       <style>{`
         @keyframes lpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .lnav-link:hover { color:#f1f5f9!important }
@@ -229,13 +229,6 @@ export default function LandingContent() {
         .lbtn-primary:hover { background:#6ba3f8!important }
         .lbtn-white:hover { background:#e0eaff!important }
         .lfooter-link:hover { color:#94a3b8!important }
-        .lmobile-bar { display:none; position:fixed; bottom:0; left:0; right:0; z-index:30;
-          background:rgba(10,13,20,.97); border-top:1px solid rgba(255,255,255,.08);
-          padding:12px 16px; align-items:center; gap:12px; backdrop-filter:blur(14px); }
-        @media (max-width:639px) {
-          .lnav-desktop { display:none!important }
-          .lmobile-bar { display:flex!important }
-          .lpage-root { padding-bottom:72px }
         }
       `}</style>
 
@@ -267,7 +260,7 @@ export default function LandingContent() {
             {/* Sign in + Start free trial — hidden on mobile */}
             <div className="lnav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <Link href="/login" className="lnav-link" style={{ fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}>{t.navSignIn}</Link>
-              <Link href="/register" className="lbtn-primary" style={{ fontSize: '0.875rem', background: A, color: '#fff', padding: '7px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', transition: 'background .15s' }}>{t.navTrial}</Link>
+              <Link href="/register" className="lbtn-primary" style={{ fontSize: '0.875rem', background: A, color: '#fff', padding: '7px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', transition: 'background .15s' }}>{t.navSignUp}</Link>
             </div>
           </div>
         </div>
@@ -409,30 +402,6 @@ export default function LandingContent() {
           </div>
         </div>
       </footer>
-
-      {/* Sticky bottom bar — mobile only */}
-      <div className="lmobile-bar">
-        <Link
-          href="/register"
-          className="lbtn-primary"
-          style={{
-            flex: 1, display: 'block', textAlign: 'center',
-            background: A, color: '#fff', fontWeight: 700,
-            fontSize: '0.97rem', padding: '13px 20px',
-            borderRadius: 12, textDecoration: 'none',
-            transition: 'background .15s',
-          }}
-        >
-          {t.heroCta}
-        </Link>
-        <Link
-          href="/login"
-          className="lnav-link"
-          style={{ fontSize: '0.82rem', color: '#64748b', textDecoration: 'none', whiteSpace: 'nowrap' }}
-        >
-          {t.navSignIn}
-        </Link>
-      </div>
     </div>
   )
 }
