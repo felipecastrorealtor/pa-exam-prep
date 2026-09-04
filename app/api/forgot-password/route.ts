@@ -90,7 +90,24 @@ export async function POST(req: NextRequest) {
         }
       } else {
         console.error('[forgot-password] Resend error:', err)
-        return NextResponse.json({ error: err?.message ?? 'Failed to send email' }, { status: 500 })
+      }
+    }
+
+    // Last resort: let Supabase send it with its own email service.
+    // Requires custom SMTP to be OFF in Supabase (Auth -> Settings -> SMTP),
+    // otherwise Supabase relays through the same unverified sender and fails.
+    if (!res.ok) {
+      console.warn('[forgot-password] Resend unavailable, falling back to Supabase email')
+      const anon = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      const { error: sbErr } = await anon.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo ?? `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://repaexam.com'}/reset-password`,
+      })
+      if (sbErr) {
+        console.error('[forgot-password] Supabase fallback failed:', sbErr)
+        return NextResponse.json({ error: 'Failed to send email' }, { status: 500 })
       }
     }
 
