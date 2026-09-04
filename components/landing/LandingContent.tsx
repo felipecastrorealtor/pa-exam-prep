@@ -220,7 +220,7 @@ export default function LandingContent() {
   const year = new Date().getFullYear()
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0d14', color: '#f1f5f9' }}>
+    <div className="lpage-root" style={{ minHeight: '100vh', background: '#0a0d14', color: '#f1f5f9' }}>
       <style>{`
         @keyframes lpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
         .lnav-link:hover { color:#f1f5f9!important }
@@ -229,6 +229,14 @@ export default function LandingContent() {
         .lbtn-primary:hover { background:#6ba3f8!important }
         .lbtn-white:hover { background:#e0eaff!important }
         .lfooter-link:hover { color:#94a3b8!important }
+        .lmobile-bar { display:none; position:fixed; bottom:0; left:0; right:0; z-index:30;
+          background:rgba(10,13,20,.97); border-top:1px solid rgba(255,255,255,.08);
+          padding:12px 16px; align-items:center; gap:12px; backdrop-filter:blur(14px); }
+        @media (max-width:639px) {
+          .lnav-desktop { display:none!important }
+          .lmobile-bar { display:flex!important }
+          .lpage-root { padding-bottom:72px }
+        }
       `}</style>
 
       {/* Nav */}
@@ -240,6 +248,7 @@ export default function LandingContent() {
         <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 20px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>Real Estate PA Exam</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* EN|ES toggle — always visible */}
             <button
               onClick={() => setLang(l => l === 'en' ? 'es' : 'en')}
               style={{
@@ -255,8 +264,11 @@ export default function LandingContent() {
               <span style={{ color: 'rgba(79,142,247,.35)', margin: '0 3px' }}>|</span>
               <span style={{ opacity: lang === 'es' ? 1 : 0.38 }}>ES</span>
             </button>
-            <Link href="/login" className="lnav-link" style={{ fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}>{t.navSignIn}</Link>
-            <Link href="/register" className="lbtn-primary" style={{ fontSize: '0.875rem', background: A, color: '#fff', padding: '7px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', transition: 'background .15s' }}>{t.navTrial}</Link>
+            {/* Sign in + Start free trial — hidden on mobile */}
+            <div className="lnav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Link href="/login" className="lnav-link" style={{ fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}>{t.navSignIn}</Link>
+              <Link href="/register" className="lbtn-primary" style={{ fontSize: '0.875rem', background: A, color: '#fff', padding: '7px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', transition: 'background .15s' }}>{t.navTrial}</Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -397,6 +409,30 @@ export default function LandingContent() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky bottom bar — mobile only */}
+      <div className="lmobile-bar">
+        <Link
+          href="/register"
+          className="lbtn-primary"
+          style={{
+            flex: 1, display: 'block', textAlign: 'center',
+            background: A, color: '#fff', fontWeight: 700,
+            fontSize: '0.97rem', padding: '13px 20px',
+            borderRadius: 12, textDecoration: 'none',
+            transition: 'background .15s',
+          }}
+        >
+          {t.heroCta}
+        </Link>
+        <Link
+          href="/login"
+          className="lnav-link"
+          style={{ fontSize: '0.82rem', color: '#64748b', textDecoration: 'none', whiteSpace: 'nowrap' }}
+        >
+          {t.navSignIn}
+        </Link>
+      </div>
     </div>
   )
 }
