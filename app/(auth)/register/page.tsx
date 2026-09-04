@@ -110,16 +110,17 @@ function RegisterForm() {
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div>
           <label htmlFor="name" style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)', marginBottom: 6 }}>
-            Name (optional)
+            Name
           </label>
           <input
             id="name"
             type="text"
+            required
             autoComplete="name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             className="input"
-            placeholder="Your name"
+            placeholder="Your full name"
           />
         </div>
 
