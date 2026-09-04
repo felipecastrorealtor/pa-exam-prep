@@ -257,11 +257,7 @@ export default function LandingContent() {
               <span style={{ color: 'rgba(79,142,247,.35)', margin: '0 3px' }}>|</span>
               <span style={{ opacity: lang === 'es' ? 1 : 0.38 }}>ES</span>
             </button>
-            {/* Sign in + Start free trial — hidden on mobile */}
-            <div className="lnav-desktop" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Link href="/login" className="lnav-link" style={{ fontSize: '0.875rem', color: '#94a3b8', textDecoration: 'none' }}>{t.navSignIn}</Link>
-              <Link href="/register" className="lbtn-primary" style={{ fontSize: '0.875rem', background: A, color: '#fff', padding: '7px 18px', borderRadius: 9, fontWeight: 700, textDecoration: 'none', transition: 'background .15s' }}>{t.navSignUp}</Link>
-            </div>
+
           </div>
         </div>
       </nav>
