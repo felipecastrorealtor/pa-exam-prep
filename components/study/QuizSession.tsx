@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
+import ReportErrorButton from '@/components/study/ReportErrorButton'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,7 @@ export default function QuizSession({
   // Exam mode: collect all answers, submit at the end
   const [examAnswers, setExamAnswers] = useState<Record<string, AnswerLetter>>({})
   const [examResults, setExamResults] = useState<Record<string, boolean>>({}) // questionId → correct
+  const [reviewWrongOnly, setReviewWrongOnly] = useState(false)
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -416,43 +418,101 @@ export default function QuizSession({
             </div>
           </div>
 
-          {/* Exam review: show question-by-question breakdown */}
+          {/* Exam review — every question, your answer beside the right one */}
           {mode === 'exam' && Object.keys(examResults).length > 0 && (
-            <div className="card p-4 space-y-3">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                {lang === 'es' ? 'Revisión de respuestas' : 'Answer review'}
-              </h3>
-              <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div className="card p-4 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  {lang === 'es' ? 'Revisión de respuestas' : 'Answer review'}
+                </h3>
+                <button
+                  onClick={() => setReviewWrongOnly((v) => !v)}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300"
+                >
+                  {reviewWrongOnly
+                    ? (lang === 'es' ? 'Ver todas' : 'Show all')
+                    : (lang === 'es' ? 'Solo incorrectas' : 'Wrong only')}
+                </button>
+              </div>
+
+              <div className="space-y-3">
                 {questions.map((question, i) => {
-                  const userAns = examAnswers[question.id]
+                  const userAns    = examAnswers[question.id]
                   const wasCorrect = examResults[question.id]
+                  if (reviewWrongOnly && wasCorrect) return null
+
                   return (
-                    <div key={question.id}
+                    <div
+                      key={question.id}
                       className={clsx(
-                        'flex items-start gap-3 p-3 rounded-lg text-sm',
+                        'rounded-xl border p-4 space-y-3',
                         wasCorrect
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20'
-                          : 'bg-red-50 dark:bg-red-900/20'
-                      )}>
-                      <span className="flex-shrink-0 font-mono text-xs text-gray-400 mt-0.5">
-                        {i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-gray-800 dark:text-gray-200 line-clamp-2">
+                          ? 'border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-900/10'
+                          : 'border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-900/10'
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="font-mono text-xs text-gray-400 mt-1 shrink-0">{i + 1}</span>
+                        <p className="flex-1 text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
                           {qText(question)}
                         </p>
-                        <div className="flex gap-3 mt-1 text-xs">
-                          <span className={wasCorrect ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}>
-                            {lang === 'es' ? 'Tu respuesta' : 'Your answer'}: {userAns ?? '—'}
-                          </span>
-                          {!wasCorrect && (
-                            <span className="text-emerald-600 dark:text-emerald-400">
-                              {lang === 'es' ? 'Correcta' : 'Correct'}: {question.correct}
-                            </span>
-                          )}
-                        </div>
+                        <span className={clsx('shrink-0 text-sm font-bold',
+                          wasCorrect ? 'text-emerald-600' : 'text-red-500')}>
+                          {wasCorrect ? '✓' : '✗'}
+                        </span>
                       </div>
-                      <span className="flex-shrink-0">{wasCorrect ? '✓' : '✗'}</span>
+
+                      {/* Every option, with yours and the right one called out */}
+                      <div className="space-y-1.5">
+                        {LETTERS.map((letter) => {
+                          const isCorrect = question.correct === letter
+                          const isYours   = userAns === letter
+                          if (!isCorrect && !isYours) {
+                            return (
+                              <div key={letter} className="flex gap-2 text-xs text-gray-500 dark:text-gray-500 pl-1">
+                                <span className="font-mono w-4 shrink-0">{letter}</span>
+                                <span className="flex-1">{optText(question, letter)}</span>
+                              </div>
+                            )
+                          }
+                          return (
+                            <div
+                              key={letter}
+                              className={clsx(
+                                'flex gap-2 text-xs rounded-lg px-2 py-1.5 items-start',
+                                isCorrect
+                                  ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-100'
+                                  : 'bg-red-100 dark:bg-red-900/40 text-red-900 dark:text-red-100'
+                              )}
+                            >
+                              <span className="font-mono w-4 shrink-0 font-bold">{letter}</span>
+                              <span className="flex-1">{optText(question, letter)}</span>
+                              <span className="shrink-0 font-semibold whitespace-nowrap">
+                                {isCorrect && isYours ? (lang === 'es' ? 'tu respuesta ✓' : 'your answer ✓')
+                                 : isCorrect          ? (lang === 'es' ? 'correcta' : 'correct')
+                                 :                      (lang === 'es' ? 'tu respuesta' : 'your answer')}
+                              </span>
+                            </div>
+                          )
+                        })}
+                        {!userAns && (
+                          <p className="text-xs text-gray-400 pl-1 italic">
+                            {lang === 'es' ? 'Sin responder' : 'Not answered'}
+                          </p>
+                        )}
+                      </div>
+
+                      {expText(question) && (
+                        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-200 dark:border-gray-800 pt-2.5">
+                          {expText(question)}
+                        </p>
+                      )}
+
+                      <ReportErrorButton
+                        questionId={question.id}
+                        context={{ mode: 'exam-review', unitId, legacyId: question.legacyId, lang }}
+                        lang={lang}
+                      />
                     </div>
                   )
                 })}
@@ -516,6 +576,56 @@ export default function QuizSession({
           </button>
         </div>
       </header>
+
+      {/* Question map — jump anywhere in a 100-question exam without
+          clicking Next a hundred times. Exam mode only. */}
+      {mode === 'exam' && questions.length > 1 && (
+        <div className="px-4 pt-3 pb-1 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] text-gray-400">
+                {Object.keys(examAnswers).length} / {questions.length}{' '}
+                {lang === 'es' ? 'respondidas' : 'answered'}
+              </span>
+              {Object.keys(examAnswers).length < questions.length && (
+                <button
+                  onClick={() => {
+                    const next = questions.findIndex((qq) => !examAnswers[qq.id])
+                    if (next >= 0) { setIdx(next); setSelected(null); setRevealed(false) }
+                  }}
+                  className="text-[11px] text-blue-500 hover:underline"
+                >
+                  {lang === 'es' ? 'Ir a la primera sin responder' : 'Jump to first unanswered'}
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pb-1">
+              {questions.map((qq, i) => {
+                const answered = Boolean(examAnswers[qq.id])
+                const current  = i === idx
+                return (
+                  <button
+                    key={qq.id}
+                    onClick={() => { setIdx(i); setSelected(examAnswers[qq.id] ?? null); setRevealed(false) }}
+                    aria-label={`${lang === 'es' ? 'Pregunta' : 'Question'} ${i + 1}${answered ? '' : ' — ' + (lang === 'es' ? 'sin responder' : 'unanswered')}`}
+                    aria-current={current ? 'true' : undefined}
+                    className={clsx(
+                      'w-7 h-7 rounded-md text-[11px] font-semibold tabular-nums transition-colors shrink-0',
+                      current
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-300 dark:ring-blue-800'
+                        : answered
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                    )}
+                  >
+                    {i + 1}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Question area ── */}
       <main className="flex-1 px-4 py-6 flex flex-col items-center">
@@ -636,6 +746,11 @@ export default function QuizSession({
                   {expText(q)}
                 </p>
               )}
+              <ReportErrorButton
+                questionId={q.id}
+                context={{ mode, unitId, legacyId: q.legacyId, lang }}
+                lang={lang}
+              />
             </div>
           )}
 
