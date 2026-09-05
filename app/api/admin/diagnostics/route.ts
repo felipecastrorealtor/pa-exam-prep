@@ -41,7 +41,10 @@ export async function GET() {
     stripe: {
       STRIPE_SECRET_KEY: check(env.STRIPE_SECRET_KEY, /^sk_(live|test)_/,
         'must start with sk_ — a pk_ key is the publishable one and cannot create sessions'),
-      STRIPE_WEBHOOK_SECRET: check(env.STRIPE_WEBHOOK_SECRET, /^whsec_/, 'must start with whsec_'),
+      STRIPE_WEBHOOK_SECRET: check(env.STRIPE_WEBHOOK_SECRET, /^whsec_/,
+        env.STRIPE_WEBHOOK_SECRET?.startsWith('we_')
+          ? 'this is the endpoint ID, not the signing secret. Open the endpoint in the Stripe dashboard, then Signing secret -> Reveal, and copy the whsec_ value'
+          : 'must start with whsec_'),
       STRIPE_PRICE_MONTHLY: check(env.STRIPE_PRICE_MONTHLY, /^price_/, 'must start with price_'),
       STRIPE_COUPON_PROMO: check(env.STRIPE_COUPON_PROMO),
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: check(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, /^pk_/, 'must start with pk_'),
@@ -53,11 +56,17 @@ export async function GET() {
     },
     ai: {
       GEMINI_API_KEY: check(env.GEMINI_API_KEY),
-      GEMINI_MODEL: check(env.GEMINI_MODEL),
+      // Optional: unset means the route uses its own fast-model list.
+      GEMINI_MODEL: env.GEMINI_MODEL
+        ? check(env.GEMINI_MODEL)
+        : { present: false, looksRight: null, note: 'not set — using built-in default (fine)' },
     },
     email: {
       RESEND_API_KEY: check(env.RESEND_API_KEY, /^re_/, 'must start with re_'),
-      EMAIL_FROM: check(env.EMAIL_FROM),
+      // Optional: unset means "PA Exam Prep <noreply@repaexam.com>".
+      EMAIL_FROM: env.EMAIL_FROM
+        ? check(env.EMAIL_FROM)
+        : { present: false, looksRight: null, note: 'not set — using built-in default (fine)' },
     },
     app: {
       NEXT_PUBLIC_SITE_URL: check(env.NEXT_PUBLIC_SITE_URL, /^https:\/\/repaexam\.com\/?$/,
