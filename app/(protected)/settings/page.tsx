@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import SettingsForm from '@/components/settings/SettingsForm'
+import ResetProgress from '@/components/settings/ResetProgress'
 
 export const metadata: Metadata = { title: 'Profile — PA Real Estate Prep' }
 
@@ -145,6 +146,9 @@ export default async function SettingsPage() {
           💳 {isEs ? 'Administrar suscripción' : 'Manage subscription'}
         </a>
       </div>
+
+      {/* ── Reset progress ── */}
+      <ResetProgress lang={isEs ? 'es' : 'en'} />
     </div>
   )
 }

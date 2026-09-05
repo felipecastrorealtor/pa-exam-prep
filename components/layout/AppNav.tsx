@@ -50,7 +50,7 @@ const navItems = [
     ),
   },
   {
-    href: '/achievements',
+    href: '/progress',
     labelEn: 'Progress',
     labelEs: 'Progreso',
     icon: (

@@ -350,6 +350,171 @@ body {
     background: linear-gradient(135deg, rgba(79, 142, 247, 0.08), var(--surface2));
   }
 
+
+  /* ── Selects (Estudiar / Simulacro) ── */
+  .select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    color: var(--text);
+    font-size: 0.9rem;
+    padding: 9px 12px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    font-family: inherit;
+  }
+  .select:focus { outline: none; border-color: var(--accent); }
+
+  /* ── Quick option pills ── */
+  .quick-options { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+
+  /* ── Toggle switch ── */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-top: 1px solid var(--border);
+  }
+  .toggle-label { font-size: 0.85rem; color: var(--text2); }
+  .toggle-switch {
+    width: 38px; height: 21px; background: var(--surface3);
+    border: 1px solid var(--border); border-radius: 99px;
+    position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+  .toggle-knob {
+    position: absolute; top: 2px; left: 2px; width: 15px; height: 15px;
+    background: #fff; border-radius: 50%; transition: left 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { left: 19px; }
+
+  /* ── Focus areas (Inicio) ── */
+  .focus-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .focus-item:last-child { border-bottom: none; }
+  .focus-rank {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(239,68,68,0.13); border: 1px solid rgba(239,68,68,0.28);
+    color: var(--danger); font-size: 0.7rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .focus-name {
+    font-size: 0.85rem; flex: 1; min-width: 0; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .focus-pct { font-size: 0.8rem; font-weight: 700; color: var(--danger); flex-shrink: 0; }
+
+  /* ── Session trend (Inicio) ── */
+  .trend-bars { display: flex; align-items: flex-end; gap: 4px; height: 52px; margin: 10px 0 2px; }
+  .trend-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; justify-content: flex-end; }
+  .trend-bar { width: 100%; border-radius: 3px 3px 0 0; transition: height 0.5s ease; min-height: 2px; }
+  .trend-date { font-size: 0.55rem; color: var(--text3); white-space: nowrap; }
+
+  /* ── Mastery breakdown (Progreso) ── */
+  .mastery-legend { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mastery-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+  .mastery-count {
+    font-size: 0.8rem; color: var(--text2); width: 40px;
+    text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Per-unit performance (Progreso) ── */
+  .upl-row { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .upl-row:last-child { border-bottom: none; }
+  .upl-name {
+    font-size: 0.8rem; flex: 1; min-width: 0; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .upl-bar { width: 80px; background: var(--surface2); border-radius: 99px; height: 6px; overflow: hidden; flex-shrink: 0; }
+  .upl-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+  .upl-pct {
+    font-size: 0.75rem; font-weight: 700; width: 38px;
+    text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Exam history (Progreso) ── */
+  .exam-hist-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .exam-hist-item:last-child { border-bottom: none; }
+  .exam-hist-score {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 800; flex-shrink: 0;
+  }
+  .exam-hist-info { flex: 1; min-width: 0; }
+  .exam-hist-detail { font-size: 0.85rem; font-weight: 600; color: var(--text); }
+  .exam-hist-date { font-size: 0.75rem; color: var(--text3); }
+
+  /* ── Weak areas (Progreso) ── */
+  .weak-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .weak-item:last-child { border-bottom: none; }
+  .wi-unit { font-size: 0.7rem; color: var(--accent); font-weight: 700; margin-bottom: 2px; }
+  .wi-q { font-size: 0.8rem; color: var(--text2); line-height: 1.35; }
+  .wi-attempts { font-size: 0.75rem; color: var(--danger); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+
+  /* ── Level badge (Perfil) ── */
+  .level-badge {
+    display: flex; align-items: center; gap: 12px;
+    background: linear-gradient(135deg, rgba(79,142,247,0.13), rgba(124,92,252,0.07));
+    border: 1px solid rgba(79,142,247,0.28);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 12px;
+  }
+  .level-icon { font-size: 2.4rem; line-height: 1; }
+  .level-info { flex: 1; min-width: 0; }
+  .level-name { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+  .level-num { font-size: 0.75rem; color: var(--text3); }
+
+  /* ── Achievements (Inicio) ── */
+  .ach-cat-header {
+    grid-column: 1 / -1; font-size: 0.7rem; font-weight: 700;
+    color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em;
+    margin: 12px 0 2px; display: flex; align-items: center; gap: 8px;
+  }
+  .ach-cat-header::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .ach-cat-header:first-child { margin-top: 0; }
+  .ach-card { position: relative; overflow: hidden; }
+  .ach-aura {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse 80% 60% at 50% 30%, var(--ach-color, #4f8ef7), transparent 68%);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .ach-card.unlocked .ach-aura { opacity: 0.14; }
+  .ach-icon-wrap {
+    position: relative; width: 54px; height: 54px;
+    margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+  }
+  .ach-lock {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 15px; height: 15px;
+    background: var(--surface3); border: 1px solid var(--border2);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center; opacity: 0.65;
+  }
+  .ach-lock svg { width: 9px; height: 9px; stroke: var(--text3); }
+  .ach-card.unlocked .ach-lock { display: none; }
+  .ach-name { font-size: 0.7rem; font-weight: 700; line-height: 1.25; color: var(--text); position: relative; }
+  .ach-card.locked .ach-name { color: var(--text3); }
+  .ach-desc { font-size: 0.58rem; color: var(--text3); margin-top: 3px; line-height: 1.35; position: relative; }
+  .ach-card[data-tier="4"].unlocked::before {
+    content: ''; position: absolute; inset: -1px; border-radius: 15px;
+    background: linear-gradient(90deg, transparent, rgba(251,191,36,0.4), transparent);
+    background-size: 200% 100%; animation: achGoldSweep 4s linear infinite; pointer-events: none;
+    mask: linear-gradient(#0000 70%, #000) bottom/100% 3px no-repeat;
+    -webkit-mask: linear-gradient(#0000 70%, #000) bottom/100% 3px no-repeat;
+  }
+
+  /* ── Study plan (Perfil) ── */
+  .exam-date-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .exam-date-row input[type=date] {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-xs); color: var(--text); padding: 8px 12px;
+    font-size: 0.9rem; font-family: inherit;
+  }
+  .countdown-display { text-align: center; padding: 14px 0; }
+  .countdown-days { font-size: 3rem; font-weight: 900; color: var(--warning); line-height: 1; }
+  .countdown-label { font-size: 0.8rem; color: var(--text3); margin-top: 4px; }
+
   /* Empty state */
   .empty-state {
     text-align: center;
@@ -412,3 +577,5 @@ body {
   60% { transform: scale(1.12); }
   100% { transform: scale(1); }
 }
+
+@keyframes achGoldSweep { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }

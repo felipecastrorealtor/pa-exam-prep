@@ -5,104 +5,124 @@ import QuizSession from '@/components/study/QuizSession'
 
 interface Props {
   params: { unitId: string }
-  searchParams: { mode?: 'review' | 'exam'; scope?: 'complete' | 'focus' }
+  searchParams: {
+    mode?:  'review' | 'exam'
+    scope?: 'complete' | 'focus'
+    /** 'all' | number — cap the queue length (mock exam, quick practice) */
+    limit?: string
+    /** adaptive (default) | weak | new | random */
+    pick?:  string
+  }
 }
 
+const SELECT = `
+  id, legacy_id, unit_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
+  correct, explanation_en, page_ref, is_essential,
+  question_translations (
+    question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
+  )
+`
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return { title: `Unit ${params.unitId} — Study` }
+  return {
+    title: params.unitId === 'all' ? 'All units — Study' : `Unit ${params.unitId} — Study`,
+  }
 }
 
 export default async function UnitStudyPage({ params, searchParams }: Props) {
-  const unitId = parseInt(params.unitId, 10)
-  if (isNaN(unitId)) notFound()
+  const isAll  = params.unitId === 'all'
+  const unitId = isAll ? 0 : parseInt(params.unitId, 10)
+  if (!isAll && isNaN(unitId)) notFound()
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // Load unit metadata
-  const { data: unit } = await supabase
-    .from('units')
-    .select('id, title_en, title_es, enabled')
-    .eq('id', unitId)
-    .single()
+  const { data: profile } = await supabase
+    .from('profiles').select('preferred_lang').eq('id', user.id).single()
+  const lang = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
+  const isEs = lang === 'es'
 
-  if (!unit || !unit.enabled) notFound()
+  // ── Unit label ──
+  let titleEn = isEs ? 'Todas las unidades' : 'All units'
+  let titleEs: string | null = 'Todas las unidades'
 
-  // Load questions for this unit (both EN + ES)
-  // Focus mode draws only from the questions teachers marked essential.
-  // An explicit ?scope= wins (the exam offers its own choice); otherwise the
-  // student's saved preference applies.
+  if (!isAll) {
+    const { data: unit } = await supabase
+      .from('units').select('id, title_en, title_es, enabled').eq('id', unitId).single()
+    if (!unit || !unit.enabled) notFound()
+    titleEn = unit.title_en
+    titleEs = unit.title_es
+  }
+
+  // ── Scope: an explicit ?scope= wins; otherwise the saved preference. ──
   const { data: prog } = await supabase
-    .from('user_progress')
-    .select('study_mode')
-    .eq('user_id', user.id)
-    .single()
-
+    .from('user_progress').select('study_mode').eq('user_id', user.id).single()
   const savedMode = (prog as { study_mode?: string } | null)?.study_mode ?? 'complete'
   const focusOnly = (searchParams.scope ?? savedMode) === 'focus'
 
-  let query = supabase
-    .from('questions')
-    .select(`
-      id, legacy_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
-      correct, explanation_en, page_ref, is_essential,
-      question_translations (
-        question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
-      )
-    `)
-    .eq('unit_id', unitId)
-    .eq('enabled', true)
-
-  if (focusOnly) query = query.eq('is_essential', true)
-
-  let { data: questions } = await query.order('legacy_id')
-
-  // Never leave a student staring at an empty unit because nothing in it has
-  // been marked essential yet — fall back to the full set.
-  if (focusOnly && (!questions || questions.length === 0)) {
-    const fallback = await supabase
-      .from('questions')
-      .select(`
-        id, legacy_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
-        correct, explanation_en, page_ref, is_essential,
-        question_translations (
-          question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
-        )
-      `)
-      .eq('unit_id', unitId)
-      .eq('enabled', true)
-      .order('legacy_id')
-    questions = fallback.data
+  async function load(focus: boolean) {
+    let q = supabase.from('questions').select(SELECT).eq('enabled', true)
+    if (!isAll) q = q.eq('unit_id', unitId)
+    if (focus)  q = q.eq('is_essential', true)
+    const { data } = await q.order('unit_id').order('legacy_id')
+    return data
   }
 
+  let questions = await load(focusOnly)
+
+  // Never strand a student on an empty set because nothing is marked essential.
+  if (focusOnly && (!questions || questions.length === 0)) questions = await load(false)
   if (!questions || questions.length === 0) notFound()
 
-  // Load existing attempts for this user (to show mastery state)
-  const questionIds = questions.map((q) => q.id)
+  // ── Prior attempts drive both the mastery dots and the adaptive ordering ──
   const { data: attempts } = await supabase
     .from('question_attempts')
     .select('question_id, attempts, correct, mastery')
     .eq('user_id', user.id)
-    .in('question_id', questionIds)
+    .in('question_id', questions.map((q) => q.id))
 
   const attemptMap: Record<string, { attempts: number; correct: number; mastery: number }> = {}
   for (const a of attempts ?? []) {
     attemptMap[a.question_id] = { attempts: a.attempts, correct: a.correct, mastery: a.mastery }
   }
 
-  // User preferences
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('preferred_lang')
-    .eq('id', user.id)
-    .single()
+  // ── Selection: same four modes the original app offered ──
+  const pick = searchParams.pick ?? 'adaptive'
+  let pool = questions.slice()
 
-  const lang = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
-  const mode = searchParams.mode ?? 'quiz'
+  if (pick === 'weak') {
+    pool = pool.filter((q) => {
+      const a = attemptMap[q.id]
+      return a && a.attempts > a.correct
+    })
+    if (pool.length === 0) pool = questions.slice()
+  } else if (pick === 'new') {
+    pool = pool.filter((q) => !attemptMap[q.id])
+    if (pool.length === 0) pool = questions.slice()
+  }
 
-  // Serialize for client component
-  const serializedQuestions = questions.map((q) => ({
+  if (pick === 'random' || searchParams.mode === 'exam') {
+    // Deterministic per-request shuffle — Fisher-Yates.
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[pool[i], pool[j]] = [pool[j], pool[i]]
+    }
+  } else if (pick === 'adaptive') {
+    // Least-mastered first, unseen ahead of mastered.
+    pool.sort((a, b) => {
+      const ma = attemptMap[a.id]?.mastery ?? 0
+      const mb = attemptMap[b.id]?.mastery ?? 0
+      if (ma !== mb) return ma - mb
+      return (a.unit_id - b.unit_id) || (a.legacy_id - b.legacy_id)
+    })
+  }
+
+  const limitRaw = searchParams.limit
+  const limit = limitRaw && limitRaw !== 'all' ? parseInt(limitRaw, 10) : null
+  if (limit && limit > 0) pool = pool.slice(0, limit)
+
+  const serializedQuestions = pool.map((q) => ({
     id:            q.id,
     legacyId:      q.legacy_id,
     questionEn:    q.question_en,
@@ -125,12 +145,12 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
 
   return (
     <QuizSession
-      unitId={unitId}
-      unitTitleEn={unit.title_en}
-      unitTitleEs={unit.title_es}
+      unitId={isAll ? 0 : unitId}
+      unitTitleEn={titleEn}
+      unitTitleEs={titleEs}
       questions={serializedQuestions}
       initialLang={lang}
-      mode={mode as 'quiz' | 'review' | 'exam'}
+      mode={(searchParams.mode ?? 'quiz') as 'quiz' | 'review' | 'exam'}
     />
   )
 }
