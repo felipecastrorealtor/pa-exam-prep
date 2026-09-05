@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -61,7 +62,9 @@ export default function SubscribePage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-16 bg-slate-950">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="text-4xl mb-3">🏠</div>
+          <div className="flex justify-center mb-3">
+            <Image src="/logo.png" alt="" width={56} height={56} priority />
+          </div>
           <h1 className="text-2xl font-bold text-slate-100">PA Real Estate Exam Prep</h1>
           <p className="text-slate-500 mt-2 text-sm">
             Master all 21 units with 321 practice questions, flashcards, and AI explanations.
@@ -108,15 +111,14 @@ export default function SubscribePage() {
 
             <div>
               <label className="block text-sm text-slate-400 mb-1.5">
-                Promo code{' '}
-                <span className="text-slate-600">(optional — locks in $15/mo forever)</span>
+                Promo code
               </label>
               <input
                 type="text"
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                 className="input font-mono tracking-widest"
-                placeholder="PROMO15"
+                placeholder=""
                 maxLength={30}
               />
             </div>

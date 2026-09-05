@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -14,6 +15,17 @@ interface AppNavProps {
 
 // Bottom nav items matching the original app
 const navItems = [
+  {
+    href: '/home',
+    labelEn: 'Home',
+    labelEs: 'Inicio',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 14 15 14 15 22"/>
+      </svg>
+    ),
+  },
   {
     href: '/study',
     labelEn: 'Study',
@@ -34,17 +46,6 @@ const navItems = [
         <polygon points="12 2 2 7 12 12 22 7 12 2"/>
         <polyline points="2 17 12 22 22 17"/>
         <polyline points="2 12 12 17 22 12"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/glossary',
-    labelEn: 'Glossary',
-    labelEs: 'Glosario',
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
       </svg>
     ),
   },
@@ -71,32 +72,22 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    href: '/ai',
+    labelEn: 'AI',
+    labelEs: 'Consultor',
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/>
+        <path d="M19 15l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>
+      </svg>
+    ),
+  },
 ]
 
-// App icon SVG for topbar (compact version)
 function AppIconLogo() {
   return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <rect width="28" height="28" rx="7" fill="url(#navIconGrad)"/>
-      {/* House roof */}
-      <path d="M7 14 L14 8 L21 14" fill="none" stroke="white" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round"/>
-      {/* House body */}
-      <rect x="9.5" y="14" width="9" height="7" rx="1" fill="white" opacity="0.92"/>
-      {/* Door */}
-      <rect x="12" y="17" width="4" height="4" rx="0.8" fill="url(#navIconGrad)"/>
-      {/* Book curve */}
-      <path d="M6 24 Q14 21.5 22 24" stroke="url(#goldNavGrad)" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
-      <defs>
-        <linearGradient id="navIconGrad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#1a3ba0"/>
-          <stop offset="100%" stopColor="#2d1b8c"/>
-        </linearGradient>
-        <linearGradient id="goldNavGrad" x1="0" y1="0" x2="28" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#f59e0b"/>
-          <stop offset="100%" stopColor="#d97706"/>
-        </linearGradient>
-      </defs>
-    </svg>
+    <Image src="/logo.png" alt="" width={30} height={30} priority style={{ flexShrink: 0 }} />
   )
 }
 
@@ -130,7 +121,7 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
         }}
       >
         {/* Logo */}
-        <Link href="/study" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
           <AppIconLogo />
           <span style={{
             fontWeight: 800,
@@ -265,11 +256,11 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
               href={item.href}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+                padding: '7px 4px', borderRadius: 'var(--radius-sm)',
                 color: active ? 'var(--accent)' : 'var(--text3)',
                 textDecoration: 'none',
                 transition: 'color 0.2s',
-                minWidth: 56, flex: 1,
+                minWidth: 0, flex: 1,
                 background: active
                   ? 'linear-gradient(135deg,rgba(79,142,247,0.18),rgba(124,92,252,0.12))'
                   : 'transparent',
@@ -283,7 +274,7 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
                 {item.icon}
               </span>
               <span style={{
-                fontSize: '0.62rem',
+                fontSize: '0.58rem',
                 fontWeight: 700,
                 letterSpacing: '0.03em',
               }}>
