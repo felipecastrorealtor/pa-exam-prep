@@ -5,8 +5,15 @@ import { createClient } from '@/lib/supabase/server'
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
 // Ordered fallback. The first entry is the proven model; the others cover
 // transient 503s (high demand) and future deprecations without a code change.
-const MODELS = (process.env.GEMINI_MODEL ?? 'gemini-3.6-flash,gemini-flash-latest,gemini-3.5-flash')
+// gemini-3.6-flash is a reasoning model: it spends ~1000 tokens thinking before
+// writing, which took 18s in testing — well past Netlify's 10s function limit,
+// so the function was killed and the browser got an HTML error page.
+// flash-lite answers the same questions in ~1.3s.
+const MODELS = (process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite,gemini-3.5-flash,gemini-flash-latest')
   .split(',').map((m) => m.trim()).filter(Boolean)
+
+// Bail out before the platform kills us, so the client always gets JSON.
+const UPSTREAM_TIMEOUT_MS = 8000
 
 const SYSTEM_PROMPT = `Eres un experto en Real Estate de Pennsylvania y Federal (USA). Tu función es ayudar a estudiantes que se preparan para el examen de licencia de bienes raíces de Pennsylvania (PSI exam).
 
@@ -62,17 +69,30 @@ export async function POST(req: NextRequest) {
       contents,
       // These are reasoning models: part of the budget is spent thinking before
       // any visible text is produced. Too low a cap returns an empty answer.
-      generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
+      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
     })
 
     let lastStatus = 0
 
     for (const model of MODELS) {
-      const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-      })
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+
+      let res: Response
+      try {
+        res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          signal: controller.signal,
+        })
+      } catch (e) {
+        clearTimeout(timer)
+        console.error('[ai-consultant]', model, 'timed out or failed to connect')
+        lastStatus = 504
+        continue
+      }
+      clearTimeout(timer)
 
       if (res.ok) {
         const json = await res.json()

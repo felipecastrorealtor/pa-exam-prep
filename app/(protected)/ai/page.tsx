@@ -50,16 +50,29 @@ export default function AIConsultantPage() {
         }),
       })
 
-      const json = await res.json()
+      // A killed or crashed function answers with HTML, not JSON. Parsing that
+      // used to throw into the catch below and surface as "Network error",
+      // which sent people looking at their wifi instead of the real problem.
+      let json: { text?: string; error?: string } | null = null
+      try {
+        json = await res.json()
+      } catch {
+        json = null
+      }
 
-      if (!res.ok) {
-        setError(json?.error ?? 'Something went wrong.')
+      if (!res.ok || !json?.text) {
+        setError(
+          json?.error ??
+          (res.status === 504 || res.status === 502
+            ? 'The AI took too long to answer. Please try again.'
+            : `The AI service returned an unexpected response (${res.status}).`)
+        )
         setMessages(messages) // roll back the unanswered question
       } else {
         setMessages([...next, { role: 'model', text: json.text }])
       }
     } catch {
-      setError('Network error. Check your connection and try again.')
+      setError('Could not reach the server. Check your connection and try again.')
       setMessages(messages)
     }
 

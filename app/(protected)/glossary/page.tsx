@@ -12,7 +12,7 @@ export default async function GlossaryPage() {
 
   const { data: terms } = await supabase
     .from('glossary_terms')
-    .select('id, term_en, term_es, definition_en, definition_es, category')
+    .select('id, slug, term_en, term_es, definition_en, definition_es')
     .order('term_en')
 
   const { data: profile } = await supabase
@@ -23,5 +23,8 @@ export default async function GlossaryPage() {
 
   const lang = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
 
-  return <GlossaryClient terms={terms ?? []} initialLang={lang} />
+  // The table has no category column; the client treats it as optional.
+  const rows = (terms ?? []).map((t: Record<string, any>) => ({ ...t, category: null }))
+
+  return <GlossaryClient terms={rows} initialLang={lang} />
 }
