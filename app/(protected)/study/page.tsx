@@ -20,7 +20,7 @@ export default async function StudyPage() {
   // Load user progress
   const { data: progress } = await supabase
     .from('user_progress')
-    .select('xp, level, daily_streak, today_questions, daily_goal, total_questions, total_correct')
+    .select('xp, level, daily_streak, today_questions, daily_goal, total_questions, total_correct, study_mode')
     .eq('user_id', user.id)
     .single()
 
@@ -37,6 +37,7 @@ export default async function StudyPage() {
     if (unitId) masteredByUnit[unitId] = (masteredByUnit[unitId] ?? 0) + 1
   }
 
+  const studyMode = (progress?.study_mode as 'complete' | 'focus') ?? 'complete'
   const todayQ   = progress?.today_questions  ?? 0
   const dailyGoal = progress?.daily_goal      ?? 20
   const pct       = Math.min(100, (todayQ / dailyGoal) * 100)
@@ -142,6 +143,38 @@ export default async function StudyPage() {
         <Link href="/study/quick" className="btn btn-primary btn-full">
           ⚡ Quick Practice
         </Link>
+      </div>
+
+      {/* ── Mock exam ── */}
+      <div className="section-header">
+        <div className="section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Mock Exam
+        </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: '0.78rem', color: 'var(--text3)', lineHeight: 1.55, marginBottom: 12 }}>
+          Open a unit below and start its exam. The scope follows your study mode.
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{
+            padding: '6px 12px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700,
+            border: studyMode === 'focus'
+              ? '1px solid rgba(245,158,11,0.45)' : '1px solid var(--accent)',
+            background: studyMode === 'focus'
+              ? 'rgba(245,158,11,0.1)' : 'rgba(79,142,247,0.1)',
+            color: studyMode === 'focus' ? 'var(--warning)' : 'var(--accent)',
+          }}>
+            {studyMode === 'focus' ? '★ Focus — essentials only' : 'Complete — every question'}
+          </span>
+          <Link href="/settings" style={{ fontSize: '0.75rem', color: 'var(--text3)', textDecoration: 'underline' }}>
+            Change
+          </Link>
+        </div>
       </div>
 
       {/* ── Units grid ── */}

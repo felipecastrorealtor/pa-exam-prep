@@ -11,18 +11,34 @@ export default async function FlashcardsPage() {
   if (!user) redirect('/login')
 
   // Load all enabled questions (both EN + ES)
-  const { data: questions } = await supabase
-    .from('questions')
-    .select(`
+  // Focus mode narrows the deck to the questions teachers marked essential.
+  const { data: prog } = await supabase
+    .from('user_progress')
+    .select('study_mode')
+    .eq('user_id', user.id)
+    .single()
+
+  const focusOnly = ((prog as { study_mode?: string } | null)?.study_mode ?? 'complete') === 'focus'
+
+  const SELECT = `
       id, legacy_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
-      correct, explanation_en, page_ref, unit_id,
+      correct, explanation_en, page_ref, unit_id, is_essential,
       question_translations (
         question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
       )
-    `)
-    .eq('enabled', true)
-    .order('unit_id')
-    .order('legacy_id')
+    `
+
+  let q = supabase.from('questions').select(SELECT).eq('enabled', true)
+  if (focusOnly) q = q.eq('is_essential', true)
+
+  let { data: questions } = await q.order('unit_id').order('legacy_id')
+
+  // Nothing marked essential yet — don't hand the student an empty deck.
+  if (focusOnly && (!questions || questions.length === 0)) {
+    const all = await supabase.from('questions').select(SELECT)
+      .eq('enabled', true).order('unit_id').order('legacy_id')
+    questions = all.data
+  }
 
   if (!questions || questions.length === 0) notFound()
 

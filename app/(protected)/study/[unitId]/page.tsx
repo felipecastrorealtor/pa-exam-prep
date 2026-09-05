@@ -5,7 +5,7 @@ import QuizSession from '@/components/study/QuizSession'
 
 interface Props {
   params: { unitId: string }
-  searchParams: { mode?: 'review' | 'exam' }
+  searchParams: { mode?: 'review' | 'exam'; scope?: 'complete' | 'focus' }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,18 +30,51 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
   if (!unit || !unit.enabled) notFound()
 
   // Load questions for this unit (both EN + ES)
-  const { data: questions } = await supabase
+  // Focus mode draws only from the questions teachers marked essential.
+  // An explicit ?scope= wins (the exam offers its own choice); otherwise the
+  // student's saved preference applies.
+  const { data: prog } = await supabase
+    .from('user_progress')
+    .select('study_mode')
+    .eq('user_id', user.id)
+    .single()
+
+  const savedMode = (prog as { study_mode?: string } | null)?.study_mode ?? 'complete'
+  const focusOnly = (searchParams.scope ?? savedMode) === 'focus'
+
+  let query = supabase
     .from('questions')
     .select(`
       id, legacy_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
-      correct, explanation_en, page_ref,
+      correct, explanation_en, page_ref, is_essential,
       question_translations (
         question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
       )
     `)
     .eq('unit_id', unitId)
     .eq('enabled', true)
-    .order('legacy_id')
+
+  if (focusOnly) query = query.eq('is_essential', true)
+
+  let { data: questions } = await query.order('legacy_id')
+
+  // Never leave a student staring at an empty unit because nothing in it has
+  // been marked essential yet — fall back to the full set.
+  if (focusOnly && (!questions || questions.length === 0)) {
+    const fallback = await supabase
+      .from('questions')
+      .select(`
+        id, legacy_id, question_en, option_a_en, option_b_en, option_c_en, option_d_en,
+        correct, explanation_en, page_ref, is_essential,
+        question_translations (
+          question_es, option_a_es, option_b_es, option_c_es, option_d_es, explanation_es
+        )
+      `)
+      .eq('unit_id', unitId)
+      .eq('enabled', true)
+      .order('legacy_id')
+    questions = fallback.data
+  }
 
   if (!questions || questions.length === 0) notFound()
 

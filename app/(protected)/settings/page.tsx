@@ -18,7 +18,7 @@ export default async function SettingsPage() {
 
   const { data: progress } = await supabase
     .from('user_progress')
-    .select('daily_goal, exam_date, xp, level, daily_streak, total_questions, total_correct')
+    .select('daily_goal, exam_date, xp, level, daily_streak, total_questions, total_correct, study_mode')
     .eq('user_id', user.id)
     .single()
 
@@ -124,6 +124,7 @@ export default async function SettingsPage() {
 
       {/* ── Settings form ── */}
       <SettingsForm
+        initialStudyMode={(progress?.study_mode as 'complete' | 'focus') ?? 'complete'}
         initialLang={(profile?.preferred_lang as 'en' | 'es') ?? 'en'}
         initialDailyGoal={progress?.daily_goal ?? 20}
         initialExamDate={(progress as any)?.exam_date ?? null}

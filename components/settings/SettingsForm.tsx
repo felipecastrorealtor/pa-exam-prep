@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Props {
+  initialStudyMode?: 'complete' | 'focus'
   initialLang: 'en' | 'es'
   initialDailyGoal: number
   initialExamDate: string | null
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function SettingsForm({
+  initialStudyMode = 'complete',
   initialLang,
   initialDailyGoal,
   initialExamDate,
@@ -23,6 +25,7 @@ export default function SettingsForm({
   const [lang, setLang]           = useState<'en' | 'es'>(initialLang)
   const [dailyGoal, setDailyGoal] = useState(initialDailyGoal)
   const [examDate, setExamDate]   = useState(initialExamDate ?? '')
+  const [studyMode, setStudyMode] = useState<'complete' | 'focus'>(initialStudyMode)
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
   const [error, setError]         = useState('')
@@ -45,6 +48,7 @@ export default function SettingsForm({
         supabase.from('user_progress').update({
           daily_goal: dailyGoal,
           exam_date:  examDate || null,
+          study_mode: studyMode,
         }).eq('user_id', user.id),
       ])
 
@@ -89,6 +93,45 @@ export default function SettingsForm({
       <div className="card">
         <div className="card-title">
           📅 {isEs ? 'Plan de Estudio' : 'Study Plan'}
+        </div>
+
+        {/* Study mode — the first thing a student should decide */}
+        <div style={{ marginBottom: 20 }}>
+          <p className="text-sm font-medium text-slate-300 mb-1">
+            {isEs ? 'Modo de estudio' : 'Study mode'}
+          </p>
+          <p className="text-xs text-slate-500 mb-2.5 leading-relaxed">
+            {isEs
+              ? 'El modo Enfoque usa solo las preguntas que los profesores marcaron como esenciales — cubren cerca del 95% de lo más recurrente en el examen.'
+              : 'Focus mode uses only the questions teachers marked as essential — they cover about 95% of what recurs on the exam.'}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { v: 'complete', en: 'Complete', es: 'Completo',
+                subEn: 'Every question', subEs: 'Todas las preguntas' },
+              { v: 'focus', en: 'Focus', es: 'Enfoque',
+                subEn: 'Essentials only', subEs: 'Solo las esenciales' },
+            ] as const).map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setStudyMode(o.v)}
+                className={
+                  'rounded-xl border px-3 py-2.5 text-left transition-colors ' +
+                  (studyMode === o.v
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-slate-700 hover:border-slate-500')
+                }
+              >
+                <span className="block text-sm font-semibold text-slate-100">
+                  {o.v === 'focus' ? '★ ' : ''}{isEs ? o.es : o.en}
+                </span>
+                <span className="block text-xs text-slate-500 mt-0.5">
+                  {isEs ? o.subEs : o.subEn}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Exam date */}

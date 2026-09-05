@@ -15,6 +15,7 @@ export type AdminQuestion = {
   explanation_en: string | null
   page_ref: number | null
   enabled: boolean
+  is_essential: boolean
   question_es: string | null
   option_a_es: string | null
   option_b_es: string | null
@@ -34,6 +35,7 @@ export default function QuestionEditor({
   const [unitId, setUnitId]   = useState<number | 'all'>('all')
   const [search, setSearch]   = useState('')
   const [openId, setOpenId]   = useState<string | null>(null)
+  const [essentialOnly, setEssentialOnly] = useState(false)
   const [draft, setDraft]     = useState<AdminQuestion | null>(null)
   const [saving, setSaving]   = useState(false)
   const [msg, setMsg]         = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
@@ -42,6 +44,7 @@ export default function QuestionEditor({
     const q = search.trim().toLowerCase()
     return rows.filter((r) => {
       if (unitId !== 'all' && r.unit_id !== unitId) return false
+      if (essentialOnly && !r.is_essential) return false
       if (!q) return true
       return (
         r.question_en.toLowerCase().includes(q) ||
@@ -50,7 +53,7 @@ export default function QuestionEditor({
         `${r.unit_id}_${r.legacy_id}`.includes(q)
       )
     })
-  }, [rows, unitId, search])
+  }, [rows, unitId, search, essentialOnly])
 
   function open(r: AdminQuestion) {
     setOpenId(r.id === openId ? null : r.id)
@@ -77,6 +80,7 @@ export default function QuestionEditor({
           explanation_en: draft.explanation_en,
           page_ref: draft.page_ref,
           enabled: draft.enabled,
+          is_essential: draft.is_essential,
         },
         es: {
           question_es:    draft.question_es ?? '',
@@ -127,7 +131,15 @@ export default function QuestionEditor({
           className={inputCls + ' flex-1 min-w-[220px]'}
         />
 
-        <span className="text-sm text-gray-500">{filtered.length} shown</span>
+        <label className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2 whitespace-nowrap">
+          <input type="checkbox" checked={essentialOnly}
+            onChange={(e) => setEssentialOnly(e.target.checked)} />
+          ★ only
+        </label>
+
+        <span className="text-sm text-gray-500 whitespace-nowrap">
+          {filtered.length} shown · {rows.filter((r) => r.is_essential).length} essential
+        </span>
       </div>
 
       {/* List */}
@@ -144,6 +156,9 @@ export default function QuestionEditor({
               <span className="flex-1 text-sm text-gray-800 dark:text-gray-200 line-clamp-2">
                 {r.question_en}
               </span>
+              {r.is_essential && (
+                <span className="text-xs shrink-0 text-amber-500" title="Essential for the exam">★</span>
+              )}
               <span className="text-xs font-bold text-emerald-600 shrink-0">{r.correct}</span>
               {!r.enabled && <span className="text-xs text-red-500 shrink-0">off</span>}
             </button>
@@ -220,6 +235,11 @@ export default function QuestionEditor({
                     <input type="checkbox" checked={draft.enabled}
                       onChange={(e) => set('enabled', e.target.checked)} />
                     Enabled
+                  </label>
+                  <label className="text-xs flex items-center gap-2 font-medium text-amber-700 dark:text-amber-400">
+                    <input type="checkbox" checked={draft.is_essential}
+                      onChange={(e) => set('is_essential', e.target.checked)} />
+                    ★ Essential — include in Focus mode
                   </label>
 
                   <div className="flex-1" />

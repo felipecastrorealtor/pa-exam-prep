@@ -39,7 +39,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'correct must be A, B, C or D' }, { status: 400 })
     }
     const patch: Record<string, unknown> = {}
-    for (const k of ['question_en','option_a_en','option_b_en','option_c_en','option_d_en','correct','explanation_en','page_ref','enabled']) {
+    for (const k of ['question_en','option_a_en','option_b_en','option_c_en','option_d_en','correct','explanation_en','page_ref','enabled','is_essential']) {
       if (k in en) patch[k] = en[k]
     }
     if (Object.keys(patch).length) {
