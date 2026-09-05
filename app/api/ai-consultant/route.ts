@@ -3,7 +3,10 @@ import { createClient } from '@/lib/supabase/server'
 
 // The API key stays on the server. It is never sent to the browser.
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta'
-const MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.0-flash'
+// Ordered fallback. The first entry is the proven model; the others cover
+// transient 503s (high demand) and future deprecations without a code change.
+const MODELS = (process.env.GEMINI_MODEL ?? 'gemini-3.6-flash,gemini-flash-latest,gemini-3.5-flash')
+  .split(',').map((m) => m.trim()).filter(Boolean)
 
 const SYSTEM_PROMPT = `Eres un experto en Real Estate de Pennsylvania y Federal (USA). Tu función es ayudar a estudiantes que se preparan para el examen de licencia de bienes raíces de Pennsylvania (PSI exam).
 
@@ -54,36 +57,59 @@ export async function POST(req: NextRequest) {
       parts: [{ text: String(t.parts?.[0]?.text ?? '').slice(0, 2000) }],
     }))
 
-    const res = await fetch(`${GEMINI_BASE}/models/${MODEL}:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents,
-        generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
-      }),
+    const payload = JSON.stringify({
+      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents,
+      // These are reasoning models: part of the budget is spent thinking before
+      // any visible text is produced. Too low a cap returns an empty answer.
+      generationConfig: { temperature: 0.4, maxOutputTokens: 2048 },
     })
 
-    if (!res.ok) {
+    let lastStatus = 0
+
+    for (const model of MODELS) {
+      const res = await fetch(`${GEMINI_BASE}/models/${model}:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        const candidate = json?.candidates?.[0]
+        const text = (candidate?.content?.parts ?? [])
+          .map((p: { text?: string }) => p?.text ?? '')
+          .join('')
+          .trim()
+
+        if (text) return NextResponse.json({ text })
+
+        // Ran out of budget before writing anything — try the next model.
+        console.warn('[ai-consultant] empty text from', model, 'finish:', candidate?.finishReason)
+        lastStatus = 502
+        continue
+      }
+
+      lastStatus = res.status
       const detail = await res.text().catch(() => '')
-      console.error('[ai-consultant] Gemini error:', res.status, detail.slice(0, 500))
+      console.error('[ai-consultant]', model, 'failed:', res.status, detail.slice(0, 300))
+
+      // Rate limiting is the caller's problem, not something a retry fixes.
       if (res.status === 429) {
         return NextResponse.json(
           { error: 'Too many requests right now. Wait a moment and try again.' },
           { status: 429 }
         )
       }
-      // Never surface upstream detail — it can echo key material.
-      return NextResponse.json({ error: 'The AI service is unavailable.' }, { status: 502 })
+      // 404 (model retired) and 503 (overloaded) are worth retrying elsewhere.
+      if (res.status !== 404 && res.status !== 503) break
     }
 
-    const json = await res.json()
-    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) {
-      return NextResponse.json({ error: 'Empty response from the AI service.' }, { status: 502 })
-    }
-
-    return NextResponse.json({ text })
+    // Never surface upstream detail — it can echo key material.
+    return NextResponse.json(
+      { error: 'The AI service is busy right now. Please try again in a moment.' },
+      { status: lastStatus === 503 ? 503 : 502 }
+    )
   } catch (err) {
     console.error('[ai-consultant] unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

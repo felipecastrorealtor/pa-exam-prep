@@ -215,17 +215,21 @@ export default function FlashcardSession({ questions, initialLang }: Props) {
             style={{ perspective: '1200px' }}
           >
             <div
-              className="relative w-full transition-transform duration-500"
+              className="w-full transition-transform duration-500"
               style={{
                 transformStyle: 'preserve-3d',
                 transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
                 minHeight: '280px',
+                // Both faces share one grid cell, so the card grows to fit the
+                // taller of the two. Absolutely-positioned faces never do, which
+                // is what let long explanations spill past the border.
+                display: 'grid',
               }}
             >
               {/* Front */}
               <div
-                className="absolute inset-0 card p-6 flex flex-col justify-between"
-                style={{ backfaceVisibility: 'hidden' }}
+                className="card p-6 flex flex-col justify-between gap-3"
+                style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden' }}
               >
                 <div className="flex justify-between items-start text-xs text-gray-400">
                   <span>{lang === 'es' ? 'Pregunta' : 'Question'}</span>
@@ -241,17 +245,17 @@ export default function FlashcardSession({ questions, initialLang }: Props) {
 
               {/* Back */}
               <div
-                className="absolute inset-0 card p-6 flex flex-col gap-3 bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800"
-                style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                className="card p-6 flex flex-col gap-3 bg-violet-50 dark:bg-violet-900/10 border-violet-200 dark:border-violet-800"
+                style={{ gridArea: '1 / 1', backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
               >
                 <div className="text-xs text-violet-500 font-semibold">
                   {lang === 'es' ? 'Respuesta' : 'Answer'} · {letter}
                 </div>
-                <p className="text-gray-900 dark:text-white font-semibold leading-snug">
+                <p className="text-gray-900 dark:text-white font-semibold leading-snug break-words">
                   {answer}
                 </p>
                 {exp && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-t border-violet-100 dark:border-violet-900/50 pt-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-t border-violet-100 dark:border-violet-900/50 pt-3 break-words">
                     {exp}
                   </p>
                 )}
