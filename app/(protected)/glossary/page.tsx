@@ -23,8 +23,7 @@ export default async function GlossaryPage() {
 
   const lang = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
 
-  // The table has no category column; the client treats it as optional.
-  const rows = (terms ?? []).map((t: Record<string, any>) => ({ ...t, category: null }))
+  const rows = (terms ?? []) as any[]
 
   return <GlossaryClient terms={rows} initialLang={lang} />
 }
