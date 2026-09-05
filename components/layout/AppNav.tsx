@@ -98,6 +98,19 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
   const supabase = createClient()
 
   const isEs = lang === 'es'
+  const [switching, setSwitching] = useState(false)
+
+  async function toggleLang() {
+    if (switching) return
+    setSwitching(true)
+    const next = isEs ? 'en' : 'es'
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      await supabase.from('profiles').update({ preferred_lang: next }).eq('id', user.id)
+      router.refresh()
+    }
+    setSwitching(false)
+  }
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -137,8 +150,27 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
           </span>
         </Link>
 
-        {/* Right side: subscription badge + user menu */}
+        {/* Right side: language toggle + subscription badge + user menu */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={toggleLang}
+            disabled={switching}
+            title="Switch language / Cambiar idioma"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 3,
+              background: 'rgba(79,142,247,.08)',
+              border: '1px solid rgba(79,142,247,.25)',
+              borderRadius: 8, padding: '4px 9px',
+              fontSize: '0.68rem', fontWeight: 800,
+              cursor: switching ? 'wait' : 'pointer',
+              color: 'var(--accent)', letterSpacing: '0.05em',
+              opacity: switching ? 0.5 : 1,
+            }}
+          >
+            <span style={{ opacity: isEs ? 0.38 : 1 }}>EN</span>
+            <span style={{ opacity: 0.35 }}>|</span>
+            <span style={{ opacity: isEs ? 1 : 0.38 }}>ES</span>
+          </button>
           {subscriptionStatus && (
             <span style={{
               fontSize: '0.65rem',
