@@ -525,7 +525,6 @@ export default function QuizSession({
           <div className="flex items-center justify-between text-xs text-gray-400">
             <div className="flex items-center gap-2">
               <span className="font-mono">#{q.legacyId}</span>
-              {q.pageRef != null && <span>· p.{q.pageRef}</span>}
               {mode === 'exam' && (
                 <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 font-medium">
                   {lang === 'es' ? 'Modo examen' : 'Exam mode'}
@@ -635,11 +634,6 @@ export default function QuizSession({
               {expText(q) && (
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                   {expText(q)}
-                </p>
-              )}
-              {q.pageRef != null && (
-                <p className="text-xs text-gray-400">
-                  {lang === 'es' ? 'Referencia' : 'Reference'}: p.{q.pageRef}
                 </p>
               )}
             </div>

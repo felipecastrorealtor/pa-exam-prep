@@ -67,7 +67,7 @@ export default function SubscribePage() {
           </div>
           <h1 className="text-2xl font-bold text-slate-100">PA Real Estate Exam Prep</h1>
           <p className="text-slate-500 mt-2 text-sm">
-            Master all 21 units with 321 practice questions, flashcards, and AI explanations.
+            Master all 22 units with 321 practice questions, flashcards, and AI explanations.
           </p>
         </div>
 
@@ -100,7 +100,7 @@ export default function SubscribePage() {
               </div>
               <ul className="text-sm text-slate-400 space-y-1.5 pt-1">
                 <li>✅ 7-day free trial — no charge today</li>
-                <li>✅ 321 practice questions across 21 units</li>
+                <li>✅ 321 practice questions across 22 units</li>
                 <li>✅ Flashcards with spaced repetition</li>
                 <li>✅ AI-powered explanations</li>
                 <li>✅ Progress sync across all devices</li>

@@ -255,9 +255,6 @@ export default function FlashcardSession({ questions, initialLang }: Props) {
                     {exp}
                   </p>
                 )}
-                {card.pageRef != null && (
-                  <p className="text-xs text-gray-400 mt-auto">p.{card.pageRef}</p>
-                )}
               </div>
             </div>
           </div>

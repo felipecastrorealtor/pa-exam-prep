@@ -59,10 +59,25 @@ export default function SettingsForm({
   }
 
   const manageSubscription = async () => {
+    setError(null)
     try {
-      const res = await fetch('/api/stripe/portal', { method: 'POST' })
-      const { url } = await res.json()
-      if (url) window.location.href = url
+      const res  = await fetch('/api/stripe/portal', { method: 'POST' })
+      const json = await res.json()
+
+      if (json.url) {
+        window.location.href = json.url
+        return
+      }
+
+      // No Stripe customer yet — access-code and trial users land here.
+      if (json.error === 'no_customer') {
+        setError(isEs
+          ? 'Todavía no tienes una suscripción de pago. Suscríbete para administrar la facturación.'
+          : "You don't have a paid subscription yet. Subscribe to manage billing.")
+        return
+      }
+
+      setError(isEs ? 'No se pudo abrir el portal de facturación' : 'Could not open billing portal')
     } catch {
       setError(isEs ? 'No se pudo abrir el portal de facturación' : 'Could not open billing portal')
     }
