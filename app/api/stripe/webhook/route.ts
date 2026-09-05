@@ -40,12 +40,23 @@ export async function POST(req: NextRequest) {
       unpaid: 'past_due', incomplete_expired: 'canceled',
     }
 
-    await supabaseAdmin.from('profiles').update({
+    const patch: Record<string, unknown> = {
       subscription_status:    (statusMap[sub.status] ?? 'canceled') as any,
       stripe_subscription_id: sub.id,
       stripe_customer_id:     typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
       subscription_expires_at: null,
-    }).eq('id', userId)
+    }
+
+    // The moment a trial exists on Stripe's side, burn the entitlement so the
+    // same account can never be granted a second one.
+    if (sub.trial_start || sub.status === 'trialing') {
+      patch.trial_used_at = new Date(
+        (sub.trial_start ?? Math.floor(Date.now() / 1000)) * 1000
+      ).toISOString()
+    }
+
+    const { error } = await supabaseAdmin.from('profiles').update(patch as any).eq('id', userId)
+    if (error) console.error('[stripe/webhook] profile update failed:', error)
   }
 
   switch (event.type) {

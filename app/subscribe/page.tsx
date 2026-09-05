@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function SubscribePage() {
@@ -11,25 +11,76 @@ export default function SubscribePage() {
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState<string | null>(null)
   const [tab, setTab]               = useState<'sub'|'code'>('sub')
+  // null = not yet known; the page then offers both paths.
+  const [trialUsed, setTrialUsed]   = useState<boolean | null>(null)
+  // Which button is working, so only that one shows a spinner.
+  const [pending, setPending]       = useState<'trial' | 'paid' | null>(null)
 
-  async function handleSubscribe() {
+  // Ask the server whether this account still has a trial, so we never promise
+  // one it cannot have.
+  useEffect(() => {
+    let alive = true
+    fetch('/api/stripe/checkout')
+      .then((r) => (r.ok ? r.json() : { trialUsed: null }))
+      .then((j) => { if (alive) setTrialUsed(j?.trialUsed ?? null) })
+      .catch(() => { if (alive) setTrialUsed(null) })
+    return () => { alive = false }
+  }, [])
+
+  async function startCheckout(requestTrial: boolean) {
+    // Guard against double taps, but never leave the button stuck: every exit
+    // path below clears the pending state.
+    if (loading) return
     setLoading(true)
+    setPending(requestTrial ? 'trial' : 'paid')
     setError(null)
 
-    const res = await fetch('/api/stripe/checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ promoCode: promoCode.trim() || undefined }),
-    })
-    const json = await res.json()
+    try {
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          promoCode: promoCode.trim() || undefined,
+          requestTrial,
+        }),
+      })
 
-    if (json.url) {
-      window.location.href = json.url
-    } else {
-      setError(json.error || 'Could not start checkout. Try again.')
-      setLoading(false)
+      // A crashed route can answer with HTML, which would throw here and — in
+      // the old code — leave the button spinning forever.
+      let json: { url?: string; error?: string; trialUsed?: boolean } = {}
+      try {
+        json = await res.json()
+      } catch {
+        json = { error: 'The server sent an unexpected response. Please try again.' }
+      }
+
+      if (typeof json.trialUsed === 'boolean') setTrialUsed(json.trialUsed)
+
+      if (res.ok && json.url) {
+        // Same-tab navigation: not a popup, so iOS Safari and Chrome allow it
+        // even though it happens after an await.
+        window.location.assign(json.url)
+        // Leave the button disabled while the browser navigates away, but arm a
+        // fallback in case navigation is blocked or the page stays put.
+        setTimeout(() => { setLoading(false); setPending(null) }, 8000)
+        return
+      }
+
+      setError(
+        json.error ??
+        (res.status === 401
+          ? 'Your session expired. Please sign in again.'
+          : 'Could not start checkout. Please try again.')
+      )
+    } catch {
+      setError('Network error. Check your connection and try again.')
     }
+
+    setLoading(false)
+    setPending(null)
   }
+
+  const handleSubscribe = () => startCheckout(true)
 
   async function handleAccessCode() {
     if (!accessCode.trim()) return
@@ -99,7 +150,7 @@ export default function SubscribePage() {
                 $20 <span className="text-lg font-normal text-slate-500">/ month</span>
               </div>
               <ul className="text-sm text-slate-400 space-y-1.5 pt-1">
-                <li>✅ 7-day free trial — no charge today</li>
+                {trialUsed !== true && <li>✅ 7-day free trial — no charge today</li>}
                 <li>✅ 321 practice questions across 22 units</li>
                 <li>✅ Flashcards with spaced repetition</li>
                 <li>✅ AI-powered explanations</li>
@@ -129,13 +180,41 @@ export default function SubscribePage() {
               </p>
             )}
 
-            <button
-              onClick={handleSubscribe}
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? 'Redirecting to checkout…' : 'Start 7-day free trial →'}
-            </button>
+            {trialUsed === true ? (
+              <div className="space-y-3">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Your previous free trial has already been used. You can subscribe
+                  immediately for $20/month.
+                </p>
+                <button
+                  onClick={() => startCheckout(false)}
+                  disabled={loading}
+                  className="btn-primary w-full"
+                >
+                  {pending === 'paid' ? 'Redirecting to checkout…' : 'Subscribe now — $20/month'}
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={() => startCheckout(true)}
+                  disabled={loading}
+                  className="btn-primary w-full"
+                >
+                  {pending === 'trial' ? 'Redirecting to checkout…' : 'Start my 7-day free trial →'}
+                </button>
+
+                <button
+                  onClick={() => startCheckout(false)}
+                  disabled={loading}
+                  className="w-full text-center text-sm text-slate-400 hover:text-slate-200 border border-slate-700 hover:border-slate-500 rounded-xl px-4 py-3 leading-snug transition-colors disabled:opacity-50"
+                >
+                  {pending === 'paid'
+                    ? 'Redirecting to checkout…'
+                    : 'Already used your free trial? Subscribe now — $20/month'}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
