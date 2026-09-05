@@ -515,6 +515,33 @@ body {
   .countdown-days { font-size: 3rem; font-weight: 900; color: var(--warning); line-height: 1; }
   .countdown-label { font-size: 0.8rem; color: var(--text3); margin-top: 4px; }
 
+
+  /* ── Date field ──
+     Safari/iOS lays the value out in a shadow-DOM box that ignores the input's
+     own text-align, and reserves room for the picker indicator on the right —
+     which pushed the date off-centre. Center the inner box explicitly and drop
+     the native chrome so the value sits in the middle of the field. */
+  .date-input {
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    display: block;
+  }
+  .date-input::-webkit-date-and-time-value {
+    text-align: center;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .date-input::-webkit-calendar-picker-indicator {
+    margin-left: 0;
+    opacity: 0.55;
+    cursor: pointer;
+  }
+  .date-input::-webkit-datetime-edit {
+    text-align: center;
+    width: 100%;
+  }
+
   /* Empty state */
   .empty-state {
     text-align: center;

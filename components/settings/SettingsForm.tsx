@@ -144,11 +144,13 @@ export default function SettingsForm({
             value={examDate}
             onChange={(e) => setExamDate(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
+            className="date-input"
             style={{
               width: '100%', padding: '9px 12px',
               background: 'var(--bg)', border: '1px solid var(--border)',
               borderRadius: 'var(--radius-xs)', color: 'var(--text)',
-              fontSize: '0.9rem',
+              /* 16px stops iOS Safari zooming the page when the field is tapped */
+              fontSize: 16, textAlign: 'center',
             }}
           />
           {daysUntilExam !== null && (

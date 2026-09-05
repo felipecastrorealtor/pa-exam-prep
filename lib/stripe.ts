@@ -1,8 +1,12 @@
 import Stripe from 'stripe'
 
 // Server-side Stripe client — never import in client components
+// This account is on Stripe Managed Payments, which the API rejects on any
+// version before 2025-03-31.basil — on the old pin EVERY checkout session
+// creation came back 400 and the button showed the generic failure message.
+// Keep this in step with the installed SDK's pinned version.
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2025-08-27.basil',
   typescript: true,
 })
 

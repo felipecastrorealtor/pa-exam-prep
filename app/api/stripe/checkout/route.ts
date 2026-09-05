@@ -82,11 +82,12 @@ export async function POST(req: NextRequest) {
 
     // Configuration problems are ours, not the user's — say something useful
     // without leaking key material or Stripe internals.
-    const msg = /No such price|STRIPE_PRICE_MONTHLY/i.test(e?.message ?? '')
+    const raw = e?.message ?? ''
+    const msg = /No such price|STRIPE_PRICE_MONTHLY/i.test(raw)
       ? 'Billing is not configured correctly yet. Please contact support.'
-      : /STRIPE_COUPON_PROMO|No such coupon/i.test(e?.message ?? '')
+      : /STRIPE_COUPON_PROMO|No such coupon/i.test(raw)
       ? 'That promo code is not available right now. Try again without it.'
-      : /API key|Invalid API Key|publishable/i.test(e?.message ?? '')
+      : /API key|Invalid API Key|publishable|API version|Managed Payments/i.test(raw)
       ? 'Billing is not configured correctly yet. Please contact support.'
       : 'Could not start checkout. Please try again.'
 
