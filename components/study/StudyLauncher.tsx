@@ -55,14 +55,27 @@ const T = {
   focus:       { en: '★ Focus — essentials only', es: '★ Foco — solo esenciales' },
   change:      { en: 'Change',                es: 'Cambiar' },
 
-  hiddenOne:   { en: '1 unit is outside Focus mode and is not shown.',
-                 es: '1 unidad está fuera del modo Foco y no se muestra.' },
-  hiddenMany:  { en: '{n} units are outside Focus mode and are not shown.',
-                 es: '{n} unidades están fuera del modo Foco y no se muestran.' },
-  notReady:    {
-    en: 'No question has been marked essential yet, so Focus mode has nothing of its own to serve — you are seeing the complete question bank.',
-    es: 'Todavía no hay preguntas marcadas como esenciales, así que el modo Foco no tiene nada propio que mostrar — estás viendo el banco completo de preguntas.',
+  // Four states, four sentences. Saying "you are seeing the complete question
+  // bank" while two units are being held back is the kind of small lie that
+  // makes someone stop trusting the whole screen.
+  essentialsOnly: {
+    en: 'Showing only the questions marked essential.',
+    es: 'Mostrando solo las preguntas marcadas como esenciales.',
   },
+  essentialsMinus: {
+    en: 'Showing only the questions marked essential, from the units Focus covers. {units} left out of Focus and not listed here.',
+    es: 'Mostrando solo las preguntas marcadas como esenciales, de las unidades que cubre el Foco. {units} fuera del Foco y no se muestra{p} aquí.',
+  },
+  notMarkedYet: {
+    en: 'No question is marked essential yet, so Focus is showing every question in the bank.',
+    es: 'Todavía no hay preguntas marcadas como esenciales, así que el Foco está mostrando todas las preguntas del banco.',
+  },
+  notMarkedMinus: {
+    en: 'No question is marked essential yet, so Focus is showing every question from the units it covers. {units} left out of Focus and not listed here.',
+    es: 'Todavía no hay preguntas marcadas como esenciales, así que el Foco está mostrando todas las preguntas de las unidades que cubre. {units} fuera del Foco y no se muestra{p} aquí.',
+  },
+  unitOne:  { en: '1 unit is',   es: '1 unidad está' },
+  unitMany: { en: '{n} units are', es: '{n} unidades están' },
 }
 
 export default function StudyLauncher({ units, lang, studyMode }: Props) {
@@ -89,6 +102,22 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
 
   const countOf = (u: UnitRow) => (focusActive ? u.essentialCount : u.questionCount)
   const hidden  = units.length - visibleUnits.length
+
+  // The note has to match both facts at once: whether essentials exist, and
+  // whether any unit is being held back. Getting either half wrong reads as a
+  // contradiction on screen.
+  const unitPhrase = hidden === 1
+    ? t('unitOne')
+    : t('unitMany').replace('{n}', String(hidden))
+
+  const focusNote = !inFocus ? null
+    : focusActive
+      ? (hidden > 0
+          ? { text: t('essentialsMinus').replace('{units}', unitPhrase).replace('{p}', hidden === 1 ? '' : 'n'), warn: false }
+          : { text: t('essentialsOnly'), warn: false })
+      : (hidden > 0
+          ? { text: t('notMarkedMinus').replace('{units}', unitPhrase).replace('{p}', hidden === 1 ? '' : 'n'), warn: true }
+          : { text: t('notMarkedYet'), warn: true })
 
   const [quickCount, setQuickCount] = useState(10)
   const [weakMode, setWeakMode]     = useState(false)
@@ -244,23 +273,13 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
           </a>
         </div>
 
-        {/* Focus is on but nothing is marked — say so rather than showing an
-            empty screen or, worse, the whole bank under a Focus badge. */}
-        {inFocus && totalEssential === 0 && (
+        {focusNote && (
           <p style={{
-            fontSize: '0.76rem', color: 'var(--warning)', lineHeight: 1.5,
+            fontSize: '0.76rem', lineHeight: 1.5,
+            color: focusNote.warn ? 'var(--warning)' : 'var(--text3)',
             marginTop: 10, marginBottom: 0,
           }}>
-            {t('notReady')}
-          </p>
-        )}
-
-        {inFocus && hidden > 0 && (
-          <p style={{
-            fontSize: '0.76rem', color: 'var(--text3)', lineHeight: 1.5,
-            marginTop: 10, marginBottom: 0,
-          }}>
-            {hidden === 1 ? t('hiddenOne') : t('hiddenMany').replace('{n}', String(hidden))}
+            {focusNote.text}
           </p>
         )}
       </div>
