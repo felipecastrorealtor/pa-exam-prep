@@ -14,6 +14,72 @@ const RARITY_COLORS: Record<Rarity, { primary: string; secondary: string; glow: 
   legendary: { primary: '#a855f7', secondary: '#ec4899', glow: 'rgba(168,85,247,0.6)'  },
 }
 
+type Palette = { primary: string; secondary: string; glow: string }
+
+/* ──────────────────────────────────────────────
+   Semantic palette — the color of what the icon DEPICTS.
+   Rarity still drives the ring and the sparkles, but an unlocked badge is
+   painted in its own meaning: fire is orange, accuracy is emerald, trophies
+   and crowns are gold. Anything missing here falls back to the rarity ramp.
+   ────────────────────────────────────────────── */
+const SEMANTIC_COLORS: Record<string, Palette> = {
+  // Seedling — first sprout
+  first_question: { primary: '#22c55e', secondary: '#86efac', glow: 'rgba(34,197,94,0.55)'   },
+  // Books / study volume — knowledge blue
+  q10:            { primary: '#38bdf8', secondary: '#bae6fd', glow: 'rgba(56,189,248,0.5)'   },
+  q50:            { primary: '#3b82f6', secondary: '#93c5fd', glow: 'rgba(59,130,246,0.5)'   },
+  // Bullseye — target red
+  q100:           { primary: '#ef4444', secondary: '#fecaca', glow: 'rgba(239,68,68,0.55)'   },
+  // Lightning bolt — electric yellow
+  q250:           { primary: '#eab308', secondary: '#fef08a', glow: 'rgba(234,179,8,0.55)'   },
+  // Trophy — gold
+  q500:           { primary: '#f59e0b', secondary: '#fde68a', glow: 'rgba(245,158,11,0.6)'   },
+  // Crown — royal gold with a violet gem
+  q1000:          { primary: '#fbbf24', secondary: '#a855f7', glow: 'rgba(251,191,36,0.65)'  },
+  // Fire — hotter as the streak grows
+  streak_3:       { primary: '#fb923c', secondary: '#fde68a', glow: 'rgba(251,146,60,0.55)'  },
+  streak_7:       { primary: '#f97316', secondary: '#fbbf24', glow: 'rgba(249,115,22,0.6)'   },
+  streak_30:      { primary: '#ef4444', secondary: '#fb923c', glow: 'rgba(239,68,68,0.6)'    },
+  streak_100:     { primary: '#fbbf24', secondary: '#f43f5e', glow: 'rgba(251,191,36,0.65)'  },
+  // Graduation cap — indigo
+  session_10:     { primary: '#818cf8', secondary: '#c7d2fe', glow: 'rgba(129,140,248,0.5)'  },
+  // Eagle — steel blue
+  session_50:     { primary: '#38bdf8', secondary: '#e0f2fe', glow: 'rgba(56,189,248,0.55)'  },
+  session_100:    { primary: '#6366f1', secondary: '#a5b4fc', glow: 'rgba(99,102,241,0.55)'  },
+  // Accuracy — emerald, deepening with the threshold
+  accuracy_80:    { primary: '#34d399', secondary: '#a7f3d0', glow: 'rgba(52,211,153,0.5)'   },
+  accuracy_90:    { primary: '#10b981', secondary: '#6ee7b7', glow: 'rgba(16,185,129,0.55)'  },
+  // Perfect star — gold
+  accuracy_100:   { primary: '#facc15', secondary: '#fff7cc', glow: 'rgba(250,204,21,0.65)'  },
+  // Checkmark — success green
+  unit_complete:  { primary: '#22c55e', secondary: '#bbf7d0', glow: 'rgba(34,197,94,0.55)'   },
+  // Radiant sun — every unit done
+  all_units:      { primary: '#f59e0b', secondary: '#fef3c7', glow: 'rgba(245,158,11,0.65)'  },
+  // Clock — cyan
+  speed_bonus:    { primary: '#22d3ee', secondary: '#a5f3fc', glow: 'rgba(34,211,238,0.55)'  },
+  // Phoenix rising — rose
+  comeback:       { primary: '#fb7185', secondary: '#fecdd3', glow: 'rgba(251,113,133,0.55)' },
+}
+
+/* Blend a color toward a dark base so the badge body stays a deep tint and the
+   illustration on top keeps its full saturation. */
+function mix(hex: string, base: string, t: number): string {
+  const parse = (h: string): [number, number, number] => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ]
+  const [r1, g1, b1] = parse(hex)
+  const [r2, g2, b2] = parse(base)
+  const ch = (a: number, b: number) => Math.round(a * t + b * (1 - t))
+  return (
+    '#' +
+    [ch(r1, r2), ch(g1, g2), ch(b1, b2)]
+      .map((v) => v.toString(16).padStart(2, '0'))
+      .join('')
+  )
+}
+
 /* ──────────────────────────────────────────────
    Achievement metadata
    ────────────────────────────────────────────── */
@@ -51,7 +117,7 @@ const ACHIEVEMENT_META: Record<string, AchievementMeta> = {
    ────────────────────────────────────────────── */
 
 // Common: seedling sprout
-function IconFirstQuestion({ c }: { c: ReturnType<typeof getColors> }) {
+function IconFirstQuestion({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 34 L20 22" stroke={c.primary} strokeWidth="2" strokeLinecap="round"/>
@@ -62,7 +128,7 @@ function IconFirstQuestion({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Common: book check
-function IconQ50({ c }: { c: ReturnType<typeof getColors> }) {
+function IconQ50({ c }: { c: Palette }) {
   return (
     <g>
       <rect x="11" y="10" width="18" height="22" rx="2" fill="none" stroke={c.primary} strokeWidth="2"/>
@@ -73,7 +139,7 @@ function IconQ50({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: bullseye target
-function IconQ100({ c }: { c: ReturnType<typeof getColors> }) {
+function IconQ100({ c }: { c: Palette }) {
   return (
     <g>
       <circle cx="20" cy="20" r="11" fill="none" stroke={c.primary} strokeWidth="2" opacity="0.4"/>
@@ -88,7 +154,7 @@ function IconQ100({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: lightning bolt
-function IconQ250({ c }: { c: ReturnType<typeof getColors> }) {
+function IconQ250({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M23 8 L14 22 L19 22 L17 32 L27 18 L22 18 Z" fill={c.primary} stroke={c.secondary} strokeWidth="1" strokeLinejoin="round"/>
@@ -97,7 +163,7 @@ function IconQ250({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Epic: trophy
-function IconQ500({ c }: { c: ReturnType<typeof getColors> }) {
+function IconQ500({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M13 10 L13 20 Q13 27 20 27 Q27 27 27 20 L27 10 Z" fill="none" stroke={c.primary} strokeWidth="2"/>
@@ -111,7 +177,7 @@ function IconQ500({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Legendary: crown
-function IconQ1000({ c }: { c: ReturnType<typeof getColors> }) {
+function IconQ1000({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M9 28 L11 16 L16 22 L20 12 L24 22 L29 16 L31 28 Z" fill={c.primary} stroke={c.secondary} strokeWidth="1.5" strokeLinejoin="round"/>
@@ -124,7 +190,7 @@ function IconQ1000({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Common: small fire
-function IconStreak3({ c }: { c: ReturnType<typeof getColors> }) {
+function IconStreak3({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 32 Q12 28 12 20 Q12 14 17 11 Q16 16 18 18 Q17 13 22 10 Q21 15 24 17 Q27 14 27 11 Q30 15 29 22 Q28 28 20 32 Z" fill={c.primary}/>
@@ -134,7 +200,7 @@ function IconStreak3({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: bigger fire with inner glow
-function IconStreak7({ c }: { c: ReturnType<typeof getColors> }) {
+function IconStreak7({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 33 Q10 28 10 19 Q10 12 16 9 Q15 15 18 18 Q16 12 22 8 Q21 14 25 17 Q28 13 28 9 Q32 14 31 22 Q30 29 20 33 Z" fill={c.primary}/>
@@ -145,7 +211,7 @@ function IconStreak7({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Epic: blue inferno with star
-function IconStreak30({ c }: { c: ReturnType<typeof getColors> }) {
+function IconStreak30({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 33 Q10 28 10 18 Q10 11 16 8 Q14 14 17 17 Q15 11 21 7 Q20 13 24 16 Q27 12 27 8 Q31 13 31 21 Q30 28 20 33 Z" fill={c.primary}/>
@@ -156,7 +222,7 @@ function IconStreak30({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Common: graduation cap
-function IconSession10({ c }: { c: ReturnType<typeof getColors> }) {
+function IconSession10({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 12 L9 17 L20 22 L31 17 Z" fill={c.primary}/>
@@ -168,7 +234,7 @@ function IconSession10({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: eagle wings
-function IconSession50({ c }: { c: ReturnType<typeof getColors> }) {
+function IconSession50({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 20 Q12 14 8 18 Q10 22 16 21 Q13 25 10 24 Q12 28 18 26 L20 24 L22 26 Q28 28 30 24 Q27 25 24 21 Q30 22 32 18 Q28 14 20 20 Z" fill={c.primary}/>
@@ -179,7 +245,7 @@ function IconSession50({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Common: diamond target
-function IconAccuracy80({ c }: { c: ReturnType<typeof getColors> }) {
+function IconAccuracy80({ c }: { c: Palette }) {
   return (
     <g>
       <circle cx="20" cy="20" r="11" fill="none" stroke={c.primary} strokeWidth="1.5" strokeDasharray="3 2"/>
@@ -190,7 +256,7 @@ function IconAccuracy80({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: precision diamond with rings
-function IconAccuracy90({ c }: { c: ReturnType<typeof getColors> }) {
+function IconAccuracy90({ c }: { c: Palette }) {
   return (
     <g>
       <circle cx="20" cy="20" r="11" fill="none" stroke={c.primary} strokeWidth="1.5" opacity="0.5"/>
@@ -203,7 +269,7 @@ function IconAccuracy90({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Epic: perfect star burst
-function IconAccuracy100({ c }: { c: ReturnType<typeof getColors> }) {
+function IconAccuracy100({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 9 L22.5 16.5 L30.5 16.5 L24 21.2 L26.5 28.8 L20 24 L13.5 28.8 L16 21.2 L9.5 16.5 L17.5 16.5 Z"
@@ -214,7 +280,7 @@ function IconAccuracy100({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: checkmark in circle
-function IconUnitComplete({ c }: { c: ReturnType<typeof getColors> }) {
+function IconUnitComplete({ c }: { c: Palette }) {
   return (
     <g>
       <circle cx="20" cy="20" r="11" fill="none" stroke={c.primary} strokeWidth="2"/>
@@ -224,7 +290,7 @@ function IconUnitComplete({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Legendary: radiant all-units badge
-function IconAllUnits({ c }: { c: ReturnType<typeof getColors> }) {
+function IconAllUnits({ c }: { c: Palette }) {
   return (
     <g>
       {/* Rays */}
@@ -243,7 +309,7 @@ function IconAllUnits({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Rare: clock with check
-function IconSpeedBonus({ c }: { c: ReturnType<typeof getColors> }) {
+function IconSpeedBonus({ c }: { c: Palette }) {
   return (
     <g>
       <circle cx="20" cy="20" r="11" fill="none" stroke={c.primary} strokeWidth="2"/>
@@ -255,7 +321,7 @@ function IconSpeedBonus({ c }: { c: ReturnType<typeof getColors> }) {
 }
 
 // Epic: rising phoenix arrow
-function IconComeback({ c }: { c: ReturnType<typeof getColors> }) {
+function IconComeback({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 30 L20 14" stroke={c.primary} strokeWidth="2" strokeLinecap="round"/>
@@ -270,7 +336,7 @@ function IconComeback({ c }: { c: ReturnType<typeof getColors> }) {
 /* ──────────────────────────────────────────────
    Default icon for unknown IDs
    ────────────────────────────────────────────── */
-function IconDefault({ c }: { c: ReturnType<typeof getColors> }) {
+function IconDefault({ c }: { c: Palette }) {
   return (
     <g>
       <path d="M20 10 L22 16 L28 16 L23.5 20 L25.5 26 L20 22.5 L14.5 26 L16.5 20 L12 16 L18 16 Z"
@@ -282,12 +348,12 @@ function IconDefault({ c }: { c: ReturnType<typeof getColors> }) {
 /* ──────────────────────────────────────────────
    Icon router
    ────────────────────────────────────────────── */
-function getColors(rarity: Rarity) {
-  return RARITY_COLORS[rarity]
+function getPalette(type: string, rarity: Rarity): Palette {
+  return SEMANTIC_COLORS[type] ?? RARITY_COLORS[rarity]
 }
 
-function AchievementInner({ type, rarity }: { type: string; rarity: Rarity }) {
-  const c = getColors(rarity)
+function AchievementInner({ type, colors }: { type: string; colors: Palette }) {
+  const c = colors
   switch (type) {
     case 'first_question': return <IconFirstQuestion c={c} />
     case 'q50':            return <IconQ50           c={c} />
@@ -343,9 +409,8 @@ export default function AchievementIcon({
 }: AchievementIconProps) {
   const meta   = ACHIEVEMENT_META[achievementType] ?? { rarity: 'common' as Rarity, label: 'Achievement' }
   const rarity = meta.rarity
-  const colors = RARITY_COLORS[rarity]
+  const colors = getPalette(achievementType, rarity)
 
-  const uid    = `ach-${achievementType}`
   const hexPts = hexPoints(20, 20, 17)
 
   /* Generate a unique ID suffix to avoid SVG gradient conflicts on the same page */
@@ -370,8 +435,8 @@ export default function AchievementIcon({
       <defs>
         {/* Badge gradient */}
         <linearGradient id={`bg-${idSuffix}`} x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor={unlocked ? colors.primary   : '#1e2030'} stopOpacity="1"/>
-          <stop offset="100%" stopColor={unlocked ? colors.secondary : '#151724'} stopOpacity="1"/>
+          <stop offset="0%"   stopColor={unlocked ? mix(colors.primary,   '#12141f', 0.30) : '#1e2030'} stopOpacity="1"/>
+          <stop offset="100%" stopColor={unlocked ? mix(colors.secondary, '#0b0d15', 0.16) : '#151724'} stopOpacity="1"/>
         </linearGradient>
 
         {/* Shine overlay */}
@@ -425,7 +490,7 @@ export default function AchievementIcon({
 
       {/* Icon illustration */}
       {unlocked
-        ? <AchievementInner type={achievementType} rarity={rarity} />
+        ? <AchievementInner type={achievementType} colors={colors} />
         : (
           /* Lock icon for locked state */
           <g opacity="0.5">

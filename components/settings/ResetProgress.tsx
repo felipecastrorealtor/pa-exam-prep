@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Icon from '@/components/ui/Icon'
 
 const T = {
   title:   { en: 'Danger Zone',      es: 'Zona de Riesgo' },
@@ -93,7 +94,8 @@ export default function ResetProgress({ lang }: { lang: 'en' | 'es' }) {
           className="btn btn-ghost btn-full"
           style={{ color: 'var(--danger)', borderColor: 'rgba(239,68,68,0.4)' }}
         >
-          🗑 {t('button')}
+          <Icon name="alert" size={15} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+          {t('button')}
         </button>
       ) : (
         <div style={{

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     template: '%s | Real Estate PA Exam',
   },
   description:
-    'Master the Pennsylvania Real Estate exam with 321 practice questions, flashcards, and AI-powered explanations. Available in English and Spanish.',
+    'Master the Pennsylvania Real Estate exam with 440 practice questions, flashcards, and AI-powered explanations. Available in English and Spanish.',
   keywords: ['PA real estate exam', 'Pennsylvania real estate license', 'real estate practice test'],
   robots: { index: true, follow: true },
 }

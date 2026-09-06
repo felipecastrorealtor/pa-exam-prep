@@ -1,10 +1,13 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import SettingsForm from '@/components/settings/SettingsForm'
 import ResetProgress from '@/components/settings/ResetProgress'
+import AvatarPicker from '@/components/ui/AvatarPicker'
+import Icon from '@/components/ui/Icon'
 
-export const metadata: Metadata = { title: 'Profile — PA Real Estate Prep' }
+export const metadata: Metadata = { title: 'Profile — Real Estate PA Exam' }
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -13,9 +16,16 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, preferred_lang, subscription_status, subscription_expires_at')
+    .select('display_name, preferred_lang, role, subscription_status, subscription_expires_at')
     .eq('id', user.id)
     .single()
+
+  // Separate query so the page still renders if migration 010 has not been run.
+  const { data: avatarRow } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', user.id)
+    .maybeSingle()
 
   const { data: progress } = await supabase
     .from('user_progress')
@@ -23,26 +33,26 @@ export default async function SettingsPage() {
     .eq('user_id', user.id)
     .single()
 
-  const isEs = profile?.preferred_lang === 'es'
+  const isEs    = profile?.preferred_lang === 'es'
+  const isAdmin = profile?.role === 'admin'
 
-  const subStatus = profile?.subscription_status ?? 'canceled'
+  const subStatus  = profile?.subscription_status ?? 'canceled'
   const subExpires = profile?.subscription_expires_at ?? null
+
+  const level = progress?.level ?? 1
+  const levelIcon = level >= 10 ? 'trophy' : level >= 5 ? 'star' : 'seedling'
 
   return (
     <div>
       {/* ── Profile card ── */}
       <div className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* Avatar */}
-          <div style={{
-            width: 60, height: 60, borderRadius: '50%',
-            background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.5rem', fontWeight: 800, color: '#fff',
-            flexShrink: 0,
-          }}>
-            {(profile?.display_name || user.email || '?')[0].toUpperCase()}
-          </div>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+          <AvatarPicker
+            initial={(avatarRow as { avatar_url?: string | null } | null)?.avatar_url ?? null}
+            fallback={profile?.display_name || user.email || '?'}
+            lang={isEs ? 'es' : 'en'}
+          />
+
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text)', marginBottom: 2 }}>
               {profile?.display_name || (isEs ? 'Mi Perfil' : 'My Profile')}
@@ -88,14 +98,15 @@ export default async function SettingsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 14,
-            background: 'linear-gradient(135deg,var(--accent),var(--accent2))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem',
+            background: 'linear-gradient(135deg,rgba(79,142,247,0.18),rgba(124,92,252,0.18))',
+            border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            {(progress?.level ?? 1) >= 10 ? '🏆' : (progress?.level ?? 1) >= 5 ? '⭐' : '🌱'}
+            <Icon name={levelIcon} size={26} title={`Level ${level}`} />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
-              Level {progress?.level ?? 1} · {progress?.xp ?? 0} XP
+              Level {level} · {progress?.xp ?? 0} XP
             </div>
             <div className="xp-bar-wrap">
               <div className="xp-bar-fill" style={{ width: '40%' }} />
@@ -106,7 +117,10 @@ export default async function SettingsPage() {
         <div className="stat-row" style={{ marginTop: 14 }}>
           <div className="stat-pill">
             <div className="stat-num" style={{ color: 'var(--accent)' }}>{progress?.total_questions ?? 0}</div>
-            <div className="stat-label">{isEs ? 'Respondidas' : 'Answered'}</div>
+            <div className="stat-label">
+              <Icon name="document" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />
+              {isEs ? 'Respondidas' : 'Answered'}
+            </div>
           </div>
           <div className="stat-pill">
             <div className="stat-num" style={{ color: 'var(--success)' }}>
@@ -114,11 +128,17 @@ export default async function SettingsPage() {
                 ? `${Math.round(((progress.total_correct ?? 0) / progress.total_questions) * 100)}%`
                 : '—'}
             </div>
-            <div className="stat-label">{isEs ? 'Precisión' : 'Accuracy'}</div>
+            <div className="stat-label">
+              <Icon name="target" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />
+              {isEs ? 'Precisión' : 'Accuracy'}
+            </div>
           </div>
           <div className="stat-pill">
             <div className="stat-num" style={{ color: 'var(--warning)' }}>{progress?.daily_streak ?? 0}</div>
-            <div className="stat-label">🔥 {isEs ? 'Racha' : 'Streak'}</div>
+            <div className="stat-label">
+              <Icon name="flame" size={13} style={{ verticalAlign: '-2px', marginRight: 4 }} />
+              {isEs ? 'Racha' : 'Streak'}
+            </div>
           </div>
         </div>
       </div>
@@ -128,7 +148,7 @@ export default async function SettingsPage() {
         initialStudyMode={(progress?.study_mode as 'complete' | 'focus') ?? 'complete'}
         initialLang={(profile?.preferred_lang as 'en' | 'es') ?? 'en'}
         initialDailyGoal={progress?.daily_goal ?? 20}
-        initialExamDate={(progress as any)?.exam_date ?? null}
+        initialExamDate={(progress as { exam_date?: string | null } | null)?.exam_date ?? null}
         subscriptionStatus={subStatus}
         subscriptionExpires={subExpires}
       />
@@ -143,9 +163,39 @@ export default async function SettingsPage() {
           className="btn btn-ghost btn-full"
           style={{ marginBottom: 8 }}
         >
-          💳 {isEs ? 'Administrar suscripción' : 'Manage subscription'}
+          <Icon name="card" size={16} interactive style={{ marginRight: 8, verticalAlign: '-3px' }} />
+          {isEs ? 'Administrar suscripción' : 'Manage subscription'}
         </a>
       </div>
+
+      {/* ── Admin entry (only rendered for admin accounts) ── */}
+      {isAdmin && (
+        <div className="card">
+          <div className="card-title">
+            <Icon name="shield" size={16} style={{ marginRight: 8, verticalAlign: '-3px' }} />
+            {isEs ? 'Administración' : 'Administration'}
+          </div>
+          <p style={{ fontSize: '0.8rem', color: 'var(--text3)', margin: '0 0 10px' }}>
+            {isEs
+              ? 'Panel del administrador: preguntas, modo Foco, unidades, suscriptores y códigos de acceso.'
+              : 'Admin panel: questions, Focus mode, units, subscribers and access codes.'}
+          </p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <Link href="/admin" className="btn btn-ghost btn-full">
+              <Icon name="chart" size={16} interactive style={{ marginRight: 8, verticalAlign: '-3px' }} />
+              {isEs ? 'Panel principal' : 'Dashboard'}
+            </Link>
+            <Link href="/admin/questions" className="btn btn-ghost btn-full">
+              <Icon name="target" size={16} interactive style={{ marginRight: 8, verticalAlign: '-3px' }} />
+              {isEs ? 'Preguntas · marcar esenciales (Foco)' : 'Questions · mark essentials (Focus)'}
+            </Link>
+            <Link href="/admin/users" className="btn btn-ghost btn-full">
+              <Icon name="user" size={16} interactive style={{ marginRight: 8, verticalAlign: '-3px' }} />
+              {isEs ? 'Suscriptores y rendimiento' : 'Subscribers & performance'}
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Reset progress ── */}
       <ResetProgress lang={isEs ? 'es' : 'en'} />

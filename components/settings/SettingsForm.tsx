@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Icon from '@/components/ui/Icon'
 
 interface Props {
   initialStudyMode?: 'complete' | 'focus'
@@ -92,7 +93,8 @@ export default function SettingsForm({
       {/* ── Study Plan ── */}
       <div className="card">
         <div className="card-title">
-          📅 {isEs ? 'Plan de Estudio' : 'Study Plan'}
+          <Icon name="calendar" size={16} style={{ verticalAlign: '-3px', marginRight: 7 }} />
+          {isEs ? 'Plan de Estudio' : 'Study Plan'}
         </div>
 
         {/* Study mode — the first thing a student should decide */}
@@ -198,7 +200,8 @@ export default function SettingsForm({
       {/* ── Language ── */}
       <div className="card">
         <div className="card-title">
-          🌐 {isEs ? 'Idioma' : 'Language'}
+          <Icon name="globe" size={16} style={{ verticalAlign: '-3px', marginRight: 7 }} />
+          {isEs ? 'Idioma' : 'Language'}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['en', 'es'] as const).map((l) => (
@@ -225,7 +228,10 @@ export default function SettingsForm({
       {/* ── Subscription management ── */}
       {(subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'past_due') && (
         <div className="card">
-          <div className="card-title">💳 {isEs ? 'Facturación' : 'Billing'}</div>
+          <div className="card-title">
+          <Icon name="card" size={16} style={{ verticalAlign: '-3px', marginRight: 7 }} />
+          {isEs ? 'Facturación' : 'Billing'}
+        </div>
           <button
             onClick={manageSubscription}
             className="btn btn-ghost btn-full"

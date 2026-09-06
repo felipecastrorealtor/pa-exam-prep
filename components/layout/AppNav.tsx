@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Icon from '@/components/ui/Icon'
 
 interface AppNavProps {
   userEmail:          string
@@ -240,11 +241,13 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
                   </div>
                   <Link href="/settings" onClick={() => setMenuOpen(false)}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', fontSize: '0.85rem', color: 'var(--text2)', textDecoration: 'none' }}>
-                    ⚙️ {isEs ? 'Configuración' : 'Settings'}
+                    <Icon name="gear" size={15} interactive style={{ verticalAlign: '-3px', marginRight: 8 }} />
+                    {isEs ? 'Configuración' : 'Settings'}
                   </Link>
                   <Link href="/subscribe" onClick={() => setMenuOpen(false)}
                     style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 14px', fontSize: '0.85rem', color: 'var(--text2)', textDecoration: 'none' }}>
-                    💳 {isEs ? 'Suscripción' : 'Subscription'}
+                    <Icon name="card" size={15} interactive style={{ verticalAlign: '-3px', marginRight: 8 }} />
+                    {isEs ? 'Suscripción' : 'Subscription'}
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -256,7 +259,8 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
                       borderTop: '1px solid var(--border)', marginTop: 4,
                     }}
                   >
-                    🚪 {isEs ? 'Cerrar sesión' : 'Sign out'}
+                    <Icon name="logout" size={15} interactive style={{ verticalAlign: '-3px', marginRight: 8 }} />
+                    {isEs ? 'Cerrar sesión' : 'Sign out'}
                   </button>
                 </div>
               </>

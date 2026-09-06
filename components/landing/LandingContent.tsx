@@ -141,7 +141,7 @@ const UNITS_ES = [
 type Feature = { icon: string; title: string; desc: string }
 
 const FEATURES_EN: Feature[] = [
-  { icon: 'questions', title: '321 Practice Questions',    desc: 'Every question from the PA exam blueprint, with detailed explanations and page references.' },
+  { icon: 'questions', title: '440 Practice Questions',    desc: 'Every question from the PA exam blueprint, with detailed explanations and page references.' },
   { icon: 'flashcards', title: 'Smart Flashcards',         desc: "Leitner spaced-repetition system — focuses on what you don't know until you master it." },
   { icon: 'ai',         title: 'AI Explanations',          desc: 'Stuck on a concept? Ask the AI tutor for a plain-English breakdown, powered by Gemini.' },
   { icon: 'bilingual',  title: 'Bilingual — EN & ES',      desc: 'Full Spanish translation of every question, option, and explanation. Switch languages instantly.' },
@@ -149,7 +149,7 @@ const FEATURES_EN: Feature[] = [
   { icon: 'sync',       title: 'Cross-Device Sync',        desc: 'Study on your phone during lunch, continue on your laptop at night. All in sync.' },
 ]
 const FEATURES_ES: Feature[] = [
-  { icon: 'questions', title: '321 Preguntas de Práctica',       desc: 'Cada pregunta del esquema del examen de PA, con explicaciones detalladas y referencias de página.' },
+  { icon: 'questions', title: '440 Preguntas de Práctica',       desc: 'Cada pregunta del esquema del examen de PA, con explicaciones detalladas y referencias de página.' },
   { icon: 'flashcards', title: 'Flashcards Inteligentes',         desc: 'Sistema Leitner de repetición espaciada — se enfoca en lo que no sabes hasta que lo dominas.' },
   { icon: 'ai',         title: 'Explicaciones con IA',            desc: '¿Atascado en un concepto? Pídele al tutor de IA una explicación clara, impulsado por Gemini.' },
   { icon: 'bilingual',  title: 'Bilingüe — EN y ES',             desc: 'Traducción completa al español de cada pregunta, opción y explicación. Cambia de idioma al instante.' },
@@ -162,7 +162,7 @@ const T = {
     navSignIn: 'Sign in', navSignUp: 'Sign up',
     heroBadge: '7-day free trial · No credit card required',
     heroH1a: 'Get Ready to Pass the', heroH1b: 'PA Real Estate Exam',
-    heroSub: '321 practice questions with bilingual explanations, spaced-repetition flashcards, AI tutoring, and progress tracking — everything you need to walk in confident.',
+    heroSub: '440 practice questions with bilingual explanations, spaced-repetition flashcards, AI tutoring, and progress tracking — everything you need to walk in confident.',
     heroCta: 'Start 7-day free trial →', heroSignIn: 'Sign in',
     heroPriceNote: '$20/month after trial · Cancel anytime',
     statsQ: 'Practice questions', statsU: 'Exam units covered', statsB: 'Bilingual EN + ES',
@@ -174,7 +174,7 @@ const T = {
     unitsMore: '…and 10 more units', units: UNITS_EN,
     pricingHeading: 'Simple pricing', pricingSub: 'One plan. Everything included. Cancel anytime.',
     freePlan: 'Free Trial', freeDuration: '7 days', freeNote: 'No credit card required',
-    freeFeatures: ['All 321 questions','Flashcards & glossary','Progress tracking','Bilingual EN/ES'],
+    freeFeatures: ['All 440 questions','Flashcards & glossary','Progress tracking','Bilingual EN/ES'],
     freeCta: 'Start free →',
     paidPlan: 'Monthly', paidPrice: '$20', paidPer: '/month', paidBadge: 'Most popular',
     paidFeatures: ['Everything in free trial','AI explanations (Gemini)','Unlimited sessions','Cross-device sync'],
@@ -189,7 +189,7 @@ const T = {
     navSignIn: 'Iniciar sesión', navSignUp: 'Registrarse',
     heroBadge: 'Prueba de 7 días · Sin tarjeta de crédito',
     heroH1a: 'Prepárate para Pasar el', heroH1b: 'Examen Inmobiliario de PA',
-    heroSub: '321 preguntas de práctica con explicaciones bilingües, flashcards de repetición espaciada, tutoría con IA y seguimiento de progreso — todo lo que necesitas para entrar con confianza.',
+    heroSub: '440 preguntas de práctica con explicaciones bilingües, flashcards de repetición espaciada, tutoría con IA y seguimiento de progreso — todo lo que necesitas para entrar con confianza.',
     heroCta: 'Comenzar prueba de 7 días →', heroSignIn: 'Iniciar sesión',
     heroPriceNote: '$20/mes después de la prueba · Cancela en cualquier momento',
     statsQ: 'Preguntas de práctica', statsU: 'Unidades del examen', statsB: 'Bilingüe EN + ES',
@@ -201,7 +201,7 @@ const T = {
     unitsMore: '…y 10 unidades más', units: UNITS_ES,
     pricingHeading: 'Precios simples', pricingSub: 'Un plan. Todo incluido. Cancela en cualquier momento.',
     freePlan: 'Prueba Gratuita', freeDuration: '7 días', freeNote: 'Sin tarjeta de crédito requerida',
-    freeFeatures: ['Las 321 preguntas','Flashcards y glosario','Seguimiento de progreso','Bilingüe EN/ES'],
+    freeFeatures: ['Las 440 preguntas','Flashcards y glosario','Seguimiento de progreso','Bilingüe EN/ES'],
     freeCta: 'Comenzar gratis →',
     paidPlan: 'Mensual', paidPrice: '$20', paidPer: '/mes', paidBadge: 'Más popular',
     paidFeatures: ['Todo en la prueba gratuita','Explicaciones con IA (Gemini)','Sesiones ilimitadas','Sincronización multidispositivo'],
@@ -285,7 +285,7 @@ export default function LandingContent() {
       {/* Stats */}
       <section style={{ borderTop: '1px solid rgba(255,255,255,.07)', borderBottom: '1px solid rgba(255,255,255,.07)', background: 'rgba(255,255,255,.02)' }}>
         <div style={{ maxWidth: 896, margin: '0 auto', padding: '32px 20px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
-          {([{ val: '321', label: t.statsQ }, { val: '22', label: t.statsU }, { val: '100%', label: t.statsB }] as const).map(({ val, label }, i) => (
+          {([{ val: '440', label: t.statsQ }, { val: '22', label: t.statsU }, { val: '100%', label: t.statsB }] as const).map(({ val, label }, i) => (
             <div key={label} style={{ textAlign: 'center', padding: '0 16px', borderRight: i < 2 ? '1px solid rgba(255,255,255,.07)' : 'none' }}>
               <p style={{ fontSize: 'clamp(1.8rem,4vw,2.4rem)', fontWeight: 900, color: '#fff', fontVariantNumeric: 'tabular-nums', margin: 0 }}>{val}</p>
               <p style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 4 }}>{label}</p>

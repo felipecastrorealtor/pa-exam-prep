@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import AchievementIcon, { ACHIEVEMENT_KEYFRAMES } from '@/components/achievements/AchievementIcon'
 import { achMeta, CAT_LABEL, CAT_ORDER, type AchCat } from '@/lib/achievements'
 import { currentLevel, nextLevel, xpProgress, levelIndex, calcReadiness } from '@/lib/levels'
+import Icon from '@/components/ui/Icon'
 
 export const metadata: Metadata = { title: 'Home — PA Exam Prep' }
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,7 @@ const T = {
   r0:  { en: 'Start practicing to measure your readiness', es: 'Comienza a practicar para ver tu progreso' },
   r1:  { en: 'Keep studying — you are on track',           es: 'Sigue estudiando, vas por buen camino' },
   r2:  { en: 'Almost there! Shore up your weak areas',     es: '¡Casi listo! Refuerza tus áreas débiles' },
-  r3:  { en: '✅ Ready for the exam!',                     es: '✅ ¡Listo para el examen!' },
+  r3:  { en: 'Ready for the exam!',                        es: '¡Listo para el examen!' },
   maxLevel:   { en: 'Max level',           es: 'Nivel máximo' },
   level:      { en: 'Level',               es: 'Nivel' },
   streak:     { en: 'Streak',              es: 'Racha' },
@@ -188,17 +189,17 @@ export default async function HomePage() {
       <div className="stat-row">
         <div className="stat-pill">
           <div className="stat-num" style={{ color: 'var(--warning)' }}>{streak}</div>
-          <div className="stat-label">🔥 {t('streak')}</div>
+          <div className="stat-label">{<Icon name="flame" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />}{t('streak')}</div>
         </div>
         <div className="stat-pill">
           <div className="stat-num" style={{ color: 'var(--success)' }}>
             {total > 0 ? `${accuracy}%` : '—'}
           </div>
-          <div className="stat-label">✅ {t('accuracy')}</div>
+          <div className="stat-label">{<Icon name="target" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />}{t('accuracy')}</div>
         </div>
         <div className="stat-pill">
           <div className="stat-num" style={{ color: 'var(--accent)' }}>{total}</div>
-          <div className="stat-label">📄 {t('questions')}</div>
+          <div className="stat-label">{<Icon name="document" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />}{t('questions')}</div>
         </div>
       </div>
 
@@ -206,10 +207,13 @@ export default async function HomePage() {
       <div className="today-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>
-            📅 {t('todayGoal')}
+            <Icon name="calendar" size={15} style={{ verticalAlign: '-3px', marginRight: 6 }} />
+            {t('todayGoal')}
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text3)' }}>
-            {streak > 0 && '🔥'.repeat(Math.min(streak, 5))}
+            {streak > 0 && Array.from({ length: Math.min(streak, 5) }, (_, i) => (
+              <Icon key={i} name="flame" size={13} style={{ verticalAlign: '-2px' }} />
+            ))}
             {daysLeft !== null && daysLeft >= 0 && ` · ${daysLeft} ${t('daysToExam')}`}
           </div>
         </div>
@@ -222,7 +226,10 @@ export default async function HomePage() {
         <div style={{ fontSize: '0.75rem', color: 'var(--text3)', marginBottom: 12 }}>
           {today} / {goal} {isEs ? 'preguntas' : 'questions'}
         </div>
-        <Link href="/study" className="btn btn-primary btn-full">⚡ {t('quick')}</Link>
+        <Link href="/study" className="btn btn-primary btn-full">
+          <Icon name="bolt" size={16} interactive style={{ verticalAlign: '-3px', marginRight: 6 }} />
+          {t('quick')}
+        </Link>
       </div>
 
       {/* ── Focus areas ── */}

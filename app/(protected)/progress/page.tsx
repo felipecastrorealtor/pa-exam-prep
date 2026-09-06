@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import Icon from '@/components/ui/Icon'
 
 export const metadata: Metadata = { title: 'Progress — PA Exam Prep' }
 export const dynamic = 'force-dynamic'
@@ -12,10 +13,10 @@ const T = {
   accuracy:   { en: 'Accuracy',             es: 'Precisión' },
   streak:     { en: 'Streak',               es: 'Racha' },
   mastery:    { en: 'Question Mastery',     es: 'Maestría de Preguntas' },
-  m0:         { en: '🆕 New',               es: '🆕 Nueva' },
-  m1:         { en: '📖 Learning',          es: '📖 Aprendiendo' },
-  m2:         { en: '📈 Improving',         es: '📈 Mejorando' },
-  m3:         { en: '⭐ Mastered',          es: '⭐ Dominada' },
+  m0:         { en: 'New',                  es: 'Nueva' },
+  m1:         { en: 'Learning',             es: 'Aprendiendo' },
+  m2:         { en: 'Improving',            es: 'Mejorando' },
+  m3:         { en: 'Mastered',             es: 'Dominada' },
   mastered:   { en: 'mastered',             es: 'dominadas' },
   byUnit:     { en: 'Performance by Unit',  es: 'Rendimiento por Unidad' },
   examHist:   { en: 'Mock Exam History',    es: 'Historial de Simulacros' },
@@ -70,10 +71,10 @@ export default async function ProgressPage() {
   const bankTotal = m[0] + m[1] + m[2] + m[3]
 
   const masteryRows = [
-    { label: t('m0'), cls: 'mastery-0', n: m[0], color: 'var(--text3)' },
-    { label: t('m1'), cls: 'mastery-1', n: m[1], color: 'var(--danger)' },
-    { label: t('m2'), cls: 'mastery-2', n: m[2], color: 'var(--warning)' },
-    { label: t('m3'), cls: 'mastery-3', n: m[3], color: 'var(--success)' },
+    { label: t('m0'), icon: 'newFile' as const, cls: 'mastery-0', n: m[0], color: 'var(--text3)' },
+    { label: t('m1'), icon: 'book'    as const, cls: 'mastery-1', n: m[1], color: 'var(--danger)' },
+    { label: t('m2'), icon: 'trendUp' as const, cls: 'mastery-2', n: m[2], color: 'var(--warning)' },
+    { label: t('m3'), icon: 'star'    as const, cls: 'mastery-3', n: m[3], color: 'var(--success)' },
   ]
 
   // ── Per-unit accuracy ──
@@ -126,7 +127,7 @@ export default async function ProgressPage() {
           </div>
           <div className="stat-pill">
             <div className="stat-num" style={{ color: 'var(--warning)' }}>{streak}</div>
-            <div className="stat-label">🔥 {t('streak')}</div>
+            <div className="stat-label">{<Icon name="flame" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />}{t('streak')}</div>
           </div>
         </div>
       </div>
@@ -134,14 +135,12 @@ export default async function ProgressPage() {
       {/* ── Mastery breakdown ── */}
       <div className="card">
         <div className="card-title">{t('mastery')}</div>
-        <div className="mastery-legend">
-          {masteryRows.map((r) => (
-            <span key={r.cls} className={`mastery-badge ${r.cls}`}>{r.label}</span>
-          ))}
-        </div>
         {masteryRows.map((r) => (
           <div className="mastery-row" key={r.cls}>
-            <span className={`mastery-badge ${r.cls}`} style={{ minWidth: 96 }}>{r.label}</span>
+            <span className={`mastery-badge ${r.cls}`} style={{ minWidth: 96 }}>
+              <Icon name={r.icon} size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
+              {r.label}
+            </span>
             <div className="prog-bar" style={{ flex: 1 }}>
               <div className="prog-fill" style={{
                 width: `${bankTotal ? (r.n / bankTotal) * 100 : 0}%`, background: r.color,

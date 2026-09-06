@@ -107,7 +107,7 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('stripe_customer_id, trial_used_at, subscription_status')
+      .select('stripe_customer_id, trial_used_at, subscription_status, subscription_expires_at')
       .eq('id', user.id)
       .single()
 
@@ -115,6 +115,7 @@ export async function GET() {
       stripe_customer_id: string | null
       trial_used_at: string | null
       subscription_status: string | null
+      subscription_expires_at: string | null
     } | null
 
     let trialUsed = Boolean(p?.trial_used_at)
@@ -126,10 +127,23 @@ export async function GET() {
       trialUsed = await hasStripeSubscriptionHistory(p.stripe_customer_id)
     }
 
-    return NextResponse.json({ trialUsed })
+    // The page needs to know whether this account ALREADY has access, so it can
+    // show the subscribed state instead of asking a paying member to pay again.
+    const status = p?.subscription_status ?? null
+    const isSubscribed = ['active', 'trialing', 'past_due', 'free_access'].includes(status ?? '')
+
+    return NextResponse.json({
+      trialUsed,
+      status,
+      isSubscribed,
+      // A billing portal only exists for accounts Stripe knows about; a
+      // free_access member has no customer and so cannot be sent there.
+      canManageBilling: Boolean(p?.stripe_customer_id),
+      expiresAt: p?.subscription_expires_at ?? null,
+    })
   } catch (err) {
     console.error('[stripe/checkout] eligibility check failed:', err)
     // Unknown eligibility — the page shows both options.
-    return NextResponse.json({ trialUsed: null })
+    return NextResponse.json({ trialUsed: null, status: null, isSubscribed: false, canManageBilling: false })
   }
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import Markdown from '@/components/ui/Markdown'
 import { useState, useRef, useEffect } from 'react'
 
 type Msg = { role: 'user' | 'model'; text: string }
@@ -127,9 +128,11 @@ export default function AIConsultantPage() {
               border: m.role === 'user' ? 'none' : '1px solid var(--border)',
               borderRadius: 14, padding: '10px 14px',
               fontSize: '0.88rem', lineHeight: 1.6,
-              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+              wordBreak: 'break-word',
             }}>
-              {m.text}
+              {m.role === 'user'
+                ? <span style={{ whiteSpace: 'pre-wrap' }}>{m.text}</span>
+                : <Markdown text={m.text} />}
             </div>
           </div>
         ))}
