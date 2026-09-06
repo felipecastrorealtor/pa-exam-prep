@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import Icon from '@/components/ui/Icon'
 import { track } from '@/lib/analytics'
 
@@ -34,6 +35,10 @@ export default function SubscribePage() {
   // An account that already has access must never be shown a pay-again page.
   const [sub, setSub]               = useState<SubInfo | null>(null)
   const [portalBusy, setPortalBusy] = useState(false)
+  // A code typed at registration waits in the account metadata until the
+  // person actually has a session — which, with email confirmation on, is the
+  // first time they sign in. This is that moment.
+  const [autoRedeem, setAutoRedeem] = useState<'idle' | 'working' | 'failed'>('idle')
 
   // Ask the server for eligibility AND current access, so we never promise a
   // trial the account cannot have, nor sell a subscription it already holds.
@@ -54,6 +59,65 @@ export default function SubscribePage() {
       .catch(() => { if (alive) { setTrialUsed(null); setSub(null) } })
     return () => { alive = false }
   }, [])
+
+  useEffect(() => {
+    // Only once we know the account has no access — never against a person who
+    // is already subscribed, whose code would be spent for nothing.
+    if (!sub || sub.isSubscribed || autoRedeem !== 'idle') return
+
+    let alive = true
+    ;(async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const pending = (user?.user_metadata as Record<string, unknown> | undefined)?.pending_access_code
+
+      if (!alive || !user || typeof pending !== 'string' || !pending.trim()) return
+      setAutoRedeem('working')
+
+      try {
+        const res  = await fetch('/api/redeem-access-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: pending.trim() }),
+        })
+        const json = await res.json().catch(() => ({}))
+
+        if (json.ok) {
+          // Clear it only on success. A failed attempt consumes nothing, so
+          // keeping the code lets the next visit try again; clearing it after
+          // a success is what stops a reload spending a second seat.
+          await supabase.auth.updateUser({ data: { pending_access_code: null } }).catch(() => {})
+          if (!alive) return
+          track('access_code_redeemed', { duration_days: json.duration_days })
+          router.push('/study')
+          router.refresh()
+          return
+        }
+
+        if (!alive) return
+        setAutoRedeem('failed')
+        const msgs: Record<string, string> = {
+          invalid_code:  'That code is invalid.',
+          inactive_code: 'That code is no longer active.',
+          expired_code:  'That code has expired.',
+          used_up:       'That code has reached its usage limit.',
+        }
+        // Hand the code back in the field, so redeeming is one tap and not a
+        // hunt through an old email.
+        setAccessCode(pending.trim().toUpperCase())
+        setTab('code')
+        setError(msgs[json.error] ?? 'We could not apply your access code automatically. Try it once more below.')
+      } catch {
+        if (!alive) return
+        setAutoRedeem('failed')
+        setAccessCode(pending.trim().toUpperCase())
+        setTab('code')
+        setError('Network error while applying your access code. Try it once more below.')
+      }
+    })()
+
+    return () => { alive = false }
+  }, [sub, autoRedeem, router])
 
   async function startCheckout(requestTrial: boolean) {
     // Guard against double taps, but never leave the button stuck: every exit

@@ -38,7 +38,11 @@ function RegisterForm() {
       email,
       password,
       options: {
-        data: { display_name: displayName || email.split('@')[0] },
+        data: {
+          display_name: displayName || email.split('@')[0],
+          // Carried through email confirmation; redeemed on first sign-in.
+          ...(accessCode.trim() ? { pending_access_code: accessCode.trim().toUpperCase() } : {}),
+        },
       },
     })
 
@@ -50,18 +54,30 @@ function RegisterForm() {
       return
     }
 
-    // 2. If access code provided, redeem it via server action
-    if (accessCode.trim() && signUpData.user) {
-      const res = await fetch('/api/redeem-access-code', {
+    // 2. Redeem the access code — but only if this signup produced a session.
+    //    With email confirmation on there is none yet, and the code is waiting
+    //    in the account metadata for the first sign-in instead.
+    if (accessCode.trim() && signUpData.session) {
+      const res  = await fetch('/api/redeem-access-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: accessCode.trim() }),
       })
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
+
       if (!json.ok) {
+        // Say what actually went wrong. "Invalid or already used" for every
+        // failure is how a working code gets thrown away by mistake.
+        const reasons: Record<string, string> = {
+          invalid_code:  `Account created, but we do not recognise the code "${accessCode}".`,
+          inactive_code: `Account created, but the code "${accessCode}" is no longer active.`,
+          expired_code:  `Account created, but the code "${accessCode}" has expired.`,
+          used_up:       `Account created, but the code "${accessCode}" has reached its limit of uses.`,
+        }
         setError(
-          `Account created! But access code "${accessCode}" is invalid or already used. ` +
-          'You can enter a valid code in Settings after signing in.'
+          (reasons[json.error] ??
+            `Account created, but the code "${accessCode}" could not be applied right now.`) +
+          ' You can enter it again from the subscription screen after signing in.'
         )
         setSuccess(true)
         setLoading(false)
@@ -237,13 +253,6 @@ function RegisterForm() {
             <line x1="1" y1="10" x2="23" y2="10"/>
           </svg>
           Then $20/month — cancel anytime
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-            <line x1="7" y1="7" x2="7.01" y2="7"/>
-          </svg>
-          Have a promo code? Enter it at checkout for $15/month forever
         </div>
       </div>
 
