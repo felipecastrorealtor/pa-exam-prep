@@ -71,21 +71,32 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
   // set rather than an empty screen.
   const unitExcluded = !isAll && focusSkip.includes(unitId)
 
-  async function load(focus: boolean) {
+  // Two independent filters. `skipExcluded` honours the admin's decision about
+  // whole units; `essentialsOnly` is about which questions inside them Focus
+  // serves. The fallback below relaxes the second one and never the first.
+  async function load(opts: { essentialsOnly: boolean; skipExcluded: boolean }) {
     let q = supabase.from('questions').select(SELECT).eq('enabled', true)
     if (!isAll) q = q.eq('unit_id', unitId)
-    if (focus) {
-      q = q.eq('is_essential', true)
-      if (isAll && focusSkip.length) q = q.not('unit_id', 'in', `(${focusSkip.join(',')})`)
+    if (opts.essentialsOnly) q = q.eq('is_essential', true)
+    if (opts.skipExcluded && isAll && focusSkip.length) {
+      q = q.not('unit_id', 'in', `(${focusSkip.join(',')})`)
     }
     const { data } = await q.order('unit_id').order('legacy_id')
     return data
   }
 
-  let questions = await load(focusOnly && !unitExcluded)
+  const skipExcluded = focusOnly
 
-  // Never strand a student on an empty set because nothing is marked essential.
-  if (focusOnly && (!questions || questions.length === 0)) questions = await load(false)
+  let questions = await load({
+    essentialsOnly: focusOnly && !unitExcluded,
+    skipExcluded,
+  })
+
+  // Nothing marked essential yet? Serve the questions rather than an empty
+  // screen — but still only from the units Focus is allowed to draw from.
+  if (focusOnly && (!questions || questions.length === 0)) {
+    questions = await load({ essentialsOnly: false, skipExcluded })
+  }
   if (!questions || questions.length === 0) notFound()
 
   // ── Prior attempts drive both the mastery dots and the adaptive ordering ──

@@ -79,10 +79,12 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
   const totalEssential = units.reduce((n, u) => n + u.essentialCount, 0)
   const focusActive    = inFocus && totalEssential > 0
 
-  // What Focus actually serves: units it was not excluded from, that have at
-  // least one essential question in them.
-  const visibleUnits = focusActive
-    ? units.filter((u) => u.focusEnabled && u.essentialCount > 0)
+  // What Focus actually serves. A unit the admin took out of Focus is gone from
+  // this list whatever else is true — that decision does not depend on whether
+  // anyone has marked a question essential yet. The essentials filter is the
+  // second, separate condition, and it only applies once essentials exist.
+  const visibleUnits = inFocus
+    ? units.filter((u) => u.focusEnabled && (!focusActive || u.essentialCount > 0))
     : units
 
   const countOf = (u: UnitRow) => (focusActive ? u.essentialCount : u.questionCount)
@@ -253,7 +255,7 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
           </p>
         )}
 
-        {focusActive && hidden > 0 && (
+        {inFocus && hidden > 0 && (
           <p style={{
             fontSize: '0.76rem', color: 'var(--text3)', lineHeight: 1.5,
             marginTop: 10, marginBottom: 0,
