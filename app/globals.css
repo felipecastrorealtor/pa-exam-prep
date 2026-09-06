@@ -687,3 +687,13 @@ html, body {
   .avatar-btn .avatar-edit, .avatar-opt { transition: none; }
   .avatar-opt:hover { transform: none; }
 }
+
+/* A row that scrolls sideways on its own — the admin nav on a phone. The bar
+   is dead weight there and eats a third of the row's height. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
