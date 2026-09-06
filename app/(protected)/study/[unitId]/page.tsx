@@ -61,15 +61,28 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
   const savedMode = (prog as { study_mode?: string } | null)?.study_mode ?? 'complete'
   const focusOnly = (searchParams.scope ?? savedMode) === 'focus'
 
+  // Units the admin has taken out of Focus mode. They stay fully available in
+  // Complete mode; Focus simply never draws from them.
+  const { data: skipRows } = await supabase
+    .from('units').select('id').eq('focus_enabled', false)
+  const focusSkip = (skipRows ?? []).map((u: { id: number }) => u.id)
+
+  // Opening an excluded unit directly is a deliberate act, so serve its whole
+  // set rather than an empty screen.
+  const unitExcluded = !isAll && focusSkip.includes(unitId)
+
   async function load(focus: boolean) {
     let q = supabase.from('questions').select(SELECT).eq('enabled', true)
     if (!isAll) q = q.eq('unit_id', unitId)
-    if (focus)  q = q.eq('is_essential', true)
+    if (focus) {
+      q = q.eq('is_essential', true)
+      if (isAll && focusSkip.length) q = q.not('unit_id', 'in', `(${focusSkip.join(',')})`)
+    }
     const { data } = await q.order('unit_id').order('legacy_id')
     return data
   }
 
-  let questions = await load(focusOnly)
+  let questions = await load(focusOnly && !unitExcluded)
 
   // Never strand a student on an empty set because nothing is marked essential.
   if (focusOnly && (!questions || questions.length === 0)) questions = await load(false)

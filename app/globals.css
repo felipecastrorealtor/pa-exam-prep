@@ -77,8 +77,18 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* dvh, not vh: on iOS Safari 100vh is the address-bar-hidden height, so a
+     100vh shell is taller than the visible page and leaves a dead strip of
+     background to scroll into below the content. */
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
+}
+
+/* No rubber-band past the ends of the document, and no scroll chaining out of
+   an inner scroller into the page behind it. */
+html, body {
+  overscroll-behavior-y: none;
 }
 
 /* ══════════════════════════════════════════════

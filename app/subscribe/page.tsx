@@ -164,7 +164,7 @@ export default function SubscribePage() {
       <div>
         <h2 className="font-semibold text-slate-100">Enter your access code</h2>
         <p className="text-slate-500 text-sm mt-1">
-          Have a 30-day free access code? No credit card required.
+          Enter the code exactly as you received it.
         </p>
       </div>
 

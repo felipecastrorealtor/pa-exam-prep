@@ -1,5 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import QuestionEditor, { type AdminQuestion } from '@/components/admin/QuestionEditor'
+import UnitToggleList, { type AdminUnit } from '@/components/admin/UnitToggleList'
+import { loadAdminUnits } from '@/lib/admin/units'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,15 +57,19 @@ export default async function AdminQuestionsPage() {
   const missingEs  = rows.filter((r) => !r.explanation_es?.trim()).length
   const essentials = rows.filter((r) => r.is_essential).length
 
+  // Unit-level Focus control needs the service-role client, since disabled
+  // units are invisible to the anon read policy.
+  const adminUnits: AdminUnit[] = await loadAdminUnits(await createAdminClient())
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Questions</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Focus Mode Setup</h1>
         <p className="text-sm text-gray-500 mt-1">
           {rows.length} questions across {units?.length ?? 0} units.{' '}
           <strong className="text-amber-600 dark:text-amber-400">{essentials} marked essential</strong>{' '}
-          for Focus mode. Edit the text, the options, the correct answer, and both
-          explanations.
+          for Focus mode. Mark the questions that carry the exam, and switch off
+          whole units that Focus should skip.
         </p>
         {missingEs > 0 && (
           <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
@@ -73,7 +79,15 @@ export default async function AdminQuestionsPage() {
         )}
       </div>
 
-      <QuestionEditor questions={rows} units={units ?? []} />
+      <section className="space-y-3">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Units in Focus mode</h2>
+        <UnitToggleList units={adminUnits} mode="focus" />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="font-semibold text-gray-900 dark:text-white">Questions</h2>
+        <QuestionEditor questions={rows} units={units ?? []} />
+      </section>
     </div>
   )
 }

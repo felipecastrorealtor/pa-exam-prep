@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import Avatar, { PRESET_IDS, PresetAvatar, type PresetId } from '@/components/ui/Avatar'
 import Icon from '@/components/ui/Icon'
 
@@ -46,10 +46,13 @@ export default function AvatarPicker({
   initial,
   fallback,
   lang,
+  children,
 }: {
   initial: string | null
   fallback: string
   lang: 'en' | 'es'
+  /** The identity block (name, email, badge) shown beside the avatar. */
+  children?: ReactNode
 }) {
   const isEs = lang === 'es'
   const t = (k: keyof typeof T) => (isEs ? T[k].es : T[k].en)
@@ -101,31 +104,44 @@ export default function AvatarPicker({
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+    <div style={{ width: '100%' }}>
+      {/* Avatar on the left, the name block taking every pixel that's left —
+          so a long name wraps naturally instead of being squeezed into a
+          column two words wide. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-label={t('change')}
+          aria-expanded={open}
+          className="avatar-btn"
+          style={{
+            position: 'relative', padding: 0, border: 'none', background: 'none',
+            cursor: 'pointer', borderRadius: '50%', lineHeight: 0, flexShrink: 0,
+          }}
+        >
+          <Avatar value={value} fallback={fallback} size={64} />
+          <span className="avatar-edit">
+            <Icon name="gear" size={13} />
+          </span>
+        </button>
+
+        <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      </div>
+
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label={t('change')}
-        style={{
-          position: 'relative', padding: 0, border: 'none', background: 'none',
-          cursor: 'pointer', borderRadius: '50%', lineHeight: 0,
-        }}
-        className="avatar-btn"
+        className="btn btn-ghost btn-full"
+        style={{ marginTop: 12, fontSize: '0.82rem' }}
       >
-        <Avatar value={value} fallback={fallback} size={64} />
-        <span className="avatar-edit">
-          <Icon name="gear" size={13} />
-        </span>
+        <Icon name="user" size={15} interactive style={{ marginRight: 7, verticalAlign: '-3px' }} />
+        {busy ? t('saving') : t('change')}
       </button>
 
-      <div style={{ flex: 1, minWidth: 180 }}>
-        <button type="button" onClick={() => setOpen((o) => !o)} className="btn btn-ghost" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
-          {busy ? t('saving') : t('change')}
-        </button>
-        {error && (
-          <div style={{ color: 'var(--danger, #f87171)', fontSize: '0.75rem', marginTop: 6 }}>{error}</div>
-        )}
-      </div>
+      {error && (
+        <div style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: 8 }}>{error}</div>
+      )}
 
       {open && (
         <div className="avatar-panel">
@@ -150,7 +166,6 @@ export default function AvatarPicker({
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
             <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-ghost" style={{ flex: 1, minWidth: 140, fontSize: '0.8rem' }}>
-              <Icon name="user" size={15} style={{ marginRight: 6, verticalAlign: '-3px' }} />
               {t('upload')}
             </button>
             {value && (

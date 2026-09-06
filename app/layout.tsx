@@ -25,7 +25,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
-      <body className="antialiased" style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100vh' }}>
+      <body className="antialiased" style={{ background: 'var(--bg)', color: 'var(--text)', minHeight: '100dvh' }}>
         {children}
       </body>
     </html>

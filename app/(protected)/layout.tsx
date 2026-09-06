@@ -31,8 +31,10 @@ export default async function ProtectedLayout({
 
   if (!isActive) redirect('/subscribe')
 
+  // No min-height here: <body> already fills the viewport, and a second
+  // full-height box stacks into extra scroll on iOS.
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+    <div style={{ background: 'var(--bg)' }}>
       <AppNav
         userEmail={user.email ?? ''}
         displayName={profile?.display_name ?? ''}
@@ -43,7 +45,7 @@ export default async function ProtectedLayout({
       <main style={{
         maxWidth: 680,
         margin: '0 auto',
-        padding: 'calc(var(--top-h) + 16px) 16px calc(var(--nav-h) + 24px)',
+        padding: 'calc(var(--top-h) + 16px) 16px calc(var(--nav-h) + 24px + env(safe-area-inset-bottom))',
       }}>
         {children}
       </main>

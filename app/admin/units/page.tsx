@@ -1,41 +1,28 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
-import UnitToggleList from '@/components/admin/UnitToggleList'
+import UnitToggleList, { type AdminUnit } from '@/components/admin/UnitToggleList'
+import { loadAdminUnits } from '@/lib/admin/units'
 
 export const metadata: Metadata = { title: 'Units — Admin' }
+export const dynamic = 'force-dynamic'
 
 export default async function AdminUnitsPage() {
-  const supabase = await createClient()
-
-  const { data: units } = await supabase
-    .from('units')
-    .select('id, title_en, title_es, enabled, display_order')
-    .order('display_order')
-
-  // Question counts per unit
-  const { data: counts } = await supabase
-    .from('questions')
-    .select('unit_id')
-    .eq('enabled', true)
-
-  const countMap: Record<number, number> = {}
-  for (const c of counts ?? []) {
-    countMap[c.unit_id] = (countMap[c.unit_id] ?? 0) + 1
-  }
-
-  const serialized = (units ?? []).map((u) => ({
-    id:           u.id,
-    titleEn:      u.title_en,
-    titleEs:      u.title_es,
-    enabled:      u.enabled,
-    displayOrder: u.display_order,
-    questionCount: countMap[u.id] ?? 0,
-  }))
+  // The service-role client: the `units` read policy only exposes enabled
+  // units, so the anon client can't even see the ones an admin needs to switch
+  // back on.
+  const supabase = await createAdminClient()
+  const units: AdminUnit[] = await loadAdminUnits(supabase)
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Units</h1>
-      <UnitToggleList units={serialized} />
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Units</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          <strong>In app</strong> hides a unit from students entirely.{' '}
+          <strong>In Focus</strong> only takes it out of Focus mode.
+        </p>
+      </div>
+      <UnitToggleList units={units} />
     </div>
   )
 }

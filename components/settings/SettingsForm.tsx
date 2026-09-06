@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Icon from '@/components/ui/Icon'
+import Flag from '@/components/ui/Flag'
 
 interface Props {
   initialStudyMode?: 'complete' | 'focus'
@@ -219,7 +220,10 @@ export default function SettingsForm({
                 transition: 'all 0.2s',
               }}
             >
-              {l === 'en' ? '🇺🇸 English' : '🇪🇸 Español'}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <Flag code={l === 'en' ? 'us' : 'es'} width={22} />
+                {l === 'en' ? 'English' : 'Español'}
+              </span>
             </button>
           ))}
         </div>
@@ -261,23 +265,6 @@ export default function SettingsForm({
         {saving ? (isEs ? 'Guardando…' : 'Saving…') : saved ? '✓ Saved!' : (isEs ? 'Guardar cambios' : 'Save changes')}
       </button>
 
-      {/* Account */}
-      <div className="card" style={{ marginTop: 12, borderColor: 'rgba(239,68,68,0.2)' }}>
-        <div className="card-title" style={{ color: 'var(--danger)' }}>
-          {isEs ? 'Cuenta' : 'Account'}
-        </div>
-        <p style={{ fontSize: '0.82rem', color: 'var(--text3)', marginBottom: 10 }}>
-          {isEs
-            ? 'Para eliminar tu cuenta o reiniciar el progreso, contacta soporte.'
-            : 'To delete your account or reset all progress, contact support.'}
-        </p>
-        <a
-          href="mailto:support@repaexam.com"
-          style={{ fontSize: '0.82rem', color: 'var(--danger)', textDecoration: 'underline' }}
-        >
-          {isEs ? 'Contactar soporte →' : 'Contact support →'}
-        </a>
-      </div>
     </div>
   )
 }
