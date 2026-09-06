@@ -12,6 +12,8 @@
  * no testimonials from people who don't exist.
  */
 
+import Image from 'next/image'
+
 type Lang = 'en' | 'es'
 
 /* The app's own tokens, verbatim — this is what makes it read as the product. */
@@ -72,10 +74,7 @@ function Phone({ lang, tab, exampleLabel, children }: {
           padding: '24px 12px 8px', borderBottom: `1px solid ${BORDER}`,
           background: 'rgba(26,29,39,.72)',
         }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" style={{ flexShrink: 0 }} aria-hidden="true">
-            <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5Z" fill={SURFACE2} stroke={ACC} strokeWidth="1.6" strokeLinejoin="round" />
-            <path d="M8 21v-6h8v6" fill="none" stroke={ACC2} strokeWidth="1.6" strokeLinejoin="round" />
-          </svg>
+          <Image src="/logo.png" alt="" width={26} height={26} style={{ flexShrink: 0 }} />
           <div style={{ lineHeight: 1.05 }}>
             <b style={{ display: 'block', fontSize: 11, fontWeight: 800, color: ACC }}>Real Estate</b>
             <span style={{ display: 'block', fontSize: 9, fontWeight: 700, color: ACC2 }}>PA Exam</span>
