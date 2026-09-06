@@ -17,9 +17,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (profile?.role !== 'admin') redirect('/')
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    // min-h-screen is 100vh, which on iOS Safari is the address-bar-hidden
+    // height — taller than the visible page, so there is always a dead strip
+    // of background below the content to scroll into. dvh tracks the real
+    // viewport.
+    <div className="min-h-[100dvh] bg-gray-50 dark:bg-gray-950 overflow-x-hidden">
       <AdminNav email={user.email ?? ''} />
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8 w-full">
         {children}
       </main>
     </div>

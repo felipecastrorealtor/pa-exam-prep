@@ -86,9 +86,20 @@ body {
 }
 
 /* No rubber-band past the ends of the document, and no scroll chaining out of
-   an inner scroller into the page behind it. */
+   an inner scroller into the page behind it. Both axes: a pinch-zoomed page
+   otherwise pans sideways into empty background. */
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+  max-width: 100%;
+}
+
+/* A wide table or chart scrolls inside its own box; it never widens the page.
+   Every such container in the app is marked overflow-x-auto — this keeps the
+   promise even when the content inside insists on a minimum width. */
+.overflow-x-auto {
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 /* ══════════════════════════════════════════════
