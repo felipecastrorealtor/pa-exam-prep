@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/components/ui/Icon'
+import { track } from '@/lib/analytics'
 
 interface SubInfo {
   isSubscribed: boolean
@@ -61,6 +62,9 @@ export default function SubscribePage() {
     setLoading(true)
     setPending(requestTrial ? 'trial' : 'paid')
     setError(null)
+    // Intent only. Whether money actually moved is decided by the Stripe
+    // webhook, never by this browser.
+    track('checkout_started', { requested_trial: requestTrial, has_promo: Boolean(promoCode.trim()) })
 
     try {
       const res = await fetch('/api/stripe/checkout', {
@@ -142,6 +146,7 @@ export default function SubscribePage() {
       const json = await res.json().catch(() => ({}))
 
       if (json.ok) {
+        track('access_code_redeemed', { duration_days: json.duration_days })
         router.push('/study')
         router.refresh()
         return

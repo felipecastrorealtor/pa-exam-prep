@@ -4,6 +4,7 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { track } from '@/lib/analytics'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,8 @@ function RegisterForm() {
         data: { display_name: displayName || email.split('@')[0] },
       },
     })
+
+    if (!signUpError) track('user_registered', { language: 'en' })
 
     if (signUpError) {
       setError(signUpError.message)

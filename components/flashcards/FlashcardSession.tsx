@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { track } from '@/lib/analytics'
 
 export interface GlossaryCard {
   id: string
@@ -71,6 +72,14 @@ export default function FlashcardSession({ cards, initialLang }: Props) {
   const [localState, setLocalState] =
     useState<Record<string, { interval: number; reps: number }>>({})
 
+  // One start event per deck, Strict Mode included.
+  const deckTracked = useRef(false)
+  useEffect(() => {
+    if (deckTracked.current) return
+    deckTracked.current = true
+    track('flashcard_session_started', { deck: 'glossary' })
+  }, [])
+
   const t = (k: keyof typeof T) => T[k][lang]
   const isEs = lang === 'es'
 
@@ -121,9 +130,16 @@ export default function FlashcardSession({ cards, initialLang }: Props) {
 
     setReviewed((n) => n + 1)
 
-    if (idx + 1 >= deck.length) setDone(true)
+    if (idx + 1 >= deck.length) {
+      track('flashcard_session_completed', {
+        deck: 'glossary',
+        cards_reviewed: reviewed + 1,
+        duration_seconds: null,
+      })
+      setDone(true)
+    }
     else { setIdx(idx + 1); setFlipped(false) }
-  }, [card, idx, deck.length])
+  }, [card, idx, deck.length, reviewed])
 
   // Keyboard: space/enter flips, 1-3 rate
   useEffect(() => {

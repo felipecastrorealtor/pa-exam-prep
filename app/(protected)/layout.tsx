@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/layout/AppNav'
+import { Suspense } from 'react'
+import AnalyticsProvider from '@/components/analytics/AnalyticsProvider'
 
 // This layout wraps all subscription-gated pages.
 // Auth + subscription checks are done in middleware.ts — this is a second guard.
@@ -35,6 +37,20 @@ export default async function ProtectedLayout({
   // full-height box stacks into extra scroll on iOS.
   return (
     <div style={{ background: 'var(--bg)' }}>
+      {/* useSearchParams needs a Suspense boundary; the provider renders
+          nothing, so the fallback is nothing too. */}
+      <Suspense fallback={null}>
+        <AnalyticsProvider
+          userId={user.id}
+          plan={
+            profile?.subscription_status === 'active' || profile?.subscription_status === 'past_due' ? 'paid'
+            : profile?.subscription_status === 'trialing'    ? 'trial'
+            : profile?.subscription_status === 'free_access' ? 'free_access'
+            : 'none'
+          }
+          language={(profile?.preferred_lang as 'en' | 'es') ?? 'en'}
+        />
+      </Suspense>
       <AppNav
         userEmail={user.email ?? ''}
         displayName={profile?.display_name ?? ''}

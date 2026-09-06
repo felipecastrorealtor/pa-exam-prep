@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Icon from '@/components/ui/Icon'
+import { resetAnalytics } from '@/lib/analytics'
 
 interface AppNavProps {
   userEmail:          string
@@ -114,6 +115,9 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
   }
 
   async function handleSignOut() {
+    // Clear the analytics identity first, so nothing after the sign-out
+    // is attributed to the person who just left.
+    resetAnalytics()
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()

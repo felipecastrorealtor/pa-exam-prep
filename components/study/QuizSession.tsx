@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import ReportErrorButton from '@/components/study/ReportErrorButton'
+import { track } from '@/lib/analytics'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -147,6 +148,26 @@ export default function QuizSession({
     return lang === 'es' && q.explanationEs ? q.explanationEs : q.explanationEn
   }
 
+  // One start event per session — the ref is what keeps React Strict Mode's
+  // double mount from sending it twice.
+  const startTracked = useRef(false)
+  useEffect(() => {
+    if (startTracked.current) return
+    startTracked.current = true
+    track('study_session_started', {
+      session_mode: mode,
+      unit_id: unitId ?? null,
+      questions: questions.length,
+      language: lang as 'en' | 'es',
+    })
+    if (mode === 'exam') {
+      track('practice_exam_started', {
+        exam_type: unitId ? `unit-${unitId}` : 'full',
+        questions: questions.length,
+      })
+    }
+  }, [mode, unitId, questions.length, lang])
+
   // ── Submit a single answer ────────────────────────────────────────────────
   const submitAnswer = useCallback(async (
     question: SerializedQuestion,
@@ -167,6 +188,15 @@ export default function QuizSession({
         }),
       })
       if (res.ok) {
+        // Only now, with the answer persisted, is it a real event — clicking
+        // an option is not the same as answering one.
+        track('question_answered', {
+          question_id: question.id,
+          unit_id: unitId ?? null,
+          is_correct: isCorrect,
+          session_mode: mode,
+          language: lang as 'en' | 'es',
+        })
         const data = await res.json()
         if (typeof data.newMastery === 'number') {
           setMasteryMap((prev) => ({ ...prev, [question.id]: data.newMastery }))
@@ -178,6 +208,9 @@ export default function QuizSession({
         }
         if (Array.isArray(data.newAchievements) && data.newAchievements.length > 0) {
           setAchievements((prev) => [...prev, ...data.newAchievements])
+          for (const a of data.newAchievements) {
+            track('achievement_unlocked', { achievement_id: String(a?.id ?? a) })
+          }
         }
       }
     } catch {
@@ -194,6 +227,26 @@ export default function QuizSession({
     finalCorrect: number,
   ) => {
     const durationSec = Math.floor((Date.now() - sessionStart.current) / 1000)
+    const score = finalAnswered > 0 ? Math.round((finalCorrect / finalAnswered) * 100) : null
+
+    track('study_session_completed', {
+      session_mode: mode,
+      unit_id: unitId ?? null,
+      questions_answered: finalAnswered,
+      score,
+      duration_seconds: durationSec,
+      language: lang as 'en' | 'es',
+    })
+    if (mode === 'exam' && score != null) {
+      track('practice_exam_completed', {
+        exam_type: unitId ? `unit-${unitId}` : 'full',
+        score,
+        questions_answered: finalAnswered,
+        duration_seconds: durationSec,
+        passed: score >= 75,
+      })
+    }
+
     try {
       await fetch('/api/session', {
         method: 'POST',

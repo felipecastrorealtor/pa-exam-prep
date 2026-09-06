@@ -4,3 +4,8 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Retention sweep: warns a lapsed student 60 and 30 days before their study
+# data is cleared, and clears it a year after access ended. Daily at 08:00 UTC.
+[functions."retention-sweep"]
+  schedule = "0 8 * * *"

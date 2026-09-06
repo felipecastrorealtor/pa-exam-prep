@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { track } from '@/lib/analytics'
 
 type Props = {
   questionId?: string
@@ -32,6 +33,7 @@ export default function ReportErrorButton({ questionId, context, lang, className
     setSending(true)
     setError(null)
     try {
+      track('question_reported', { question_id: questionId ?? null, report_reason: kind })
       const res = await fetch('/api/report-error', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
