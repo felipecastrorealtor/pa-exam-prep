@@ -14,20 +14,24 @@ export default async function StudyPage() {
   const [{ data: profile }, { data: units }, { data: progress }] = await Promise.all([
     supabase.from('profiles').select('preferred_lang').eq('id', user.id).single(),
     supabase.from('units')
-      .select('id, title_en, title_es, is_pa_specific')
+      .select('id, title_en, title_es, is_pa_specific, focus_enabled')
       .eq('enabled', true).order('sort_order'),
     supabase.from('user_progress').select('study_mode').eq('user_id', user.id).single(),
   ])
 
   const lang: 'en' | 'es' = (profile?.preferred_lang as 'en' | 'es') ?? 'en'
 
-  // Question count per unit
+  // Two counts per unit, because the number a student needs depends on the
+  // scope they study in: everything enabled, and of those, the ones an admin
+  // marked essential. Focus mode shows the second.
   const { data: allQuestions } = await supabase
-    .from('questions').select('id, unit_id').eq('enabled', true)
+    .from('questions').select('id, unit_id, is_essential').eq('enabled', true)
 
   const countByUnit: Record<number, number> = {}
-  for (const q of allQuestions ?? []) {
+  const essentialByUnit: Record<number, number> = {}
+  for (const q of (allQuestions ?? []) as { unit_id: number; is_essential: boolean | null }[]) {
     countByUnit[q.unit_id] = (countByUnit[q.unit_id] ?? 0) + 1
+    if (q.is_essential) essentialByUnit[q.unit_id] = (essentialByUnit[q.unit_id] ?? 0) + 1
   }
 
   // The student's own answers per unit
@@ -46,13 +50,16 @@ export default async function StudyPage() {
   }
 
   const rows: UnitRow[] = (units ?? []).map((u) => ({
-    id:            u.id,
-    titleEn:       u.title_en,
-    titleEs:       u.title_es,
-    isPa:          Boolean((u as any).is_pa_specific),
-    questionCount: countByUnit[u.id] ?? 0,
-    answered:      statsByUnit[u.id]?.t ?? 0,
-    correct:       statsByUnit[u.id]?.c ?? 0,
+    id:             u.id,
+    titleEn:        u.title_en,
+    titleEs:        u.title_es,
+    isPa:           Boolean((u as any).is_pa_specific),
+    // Defaults to true so the page still works before migration 011 is run.
+    focusEnabled:   (u as { focus_enabled?: boolean | null }).focus_enabled ?? true,
+    questionCount:  countByUnit[u.id] ?? 0,
+    essentialCount: essentialByUnit[u.id] ?? 0,
+    answered:       statsByUnit[u.id]?.t ?? 0,
+    correct:        statsByUnit[u.id]?.c ?? 0,
   }))
 
   return (

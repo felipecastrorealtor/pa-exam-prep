@@ -8,7 +8,12 @@ export interface UnitRow {
   titleEn: string
   titleEs: string | null
   isPa: boolean
+  /** False = the admin took this unit out of Focus mode. */
+  focusEnabled: boolean
+  /** Every enabled question in the unit. */
   questionCount: number
+  /** Of those, the ones marked essential — what Focus mode actually serves. */
+  essentialCount: number
   answered: number
   correct: number
 }
@@ -43,11 +48,21 @@ const T = {
   unitsTitle:  { en: 'Study Units',           es: 'Unidades de Estudio' },
   unit:        { en: 'Unit',                  es: 'Unidad' },
   questions:   { en: 'questions',             es: 'preguntas' },
+  essentials:  { en: 'essentials',            es: 'esenciales' },
 
   scope:       { en: 'Scope',                 es: 'Alcance' },
   complete:    { en: 'Complete — every question', es: 'Completo — todas las preguntas' },
   focus:       { en: '★ Focus — essentials only', es: '★ Foco — solo esenciales' },
   change:      { en: 'Change',                es: 'Cambiar' },
+
+  hiddenOne:   { en: '1 unit is outside Focus mode and is not shown.',
+                 es: '1 unidad está fuera del modo Foco y no se muestra.' },
+  hiddenMany:  { en: '{n} units are outside Focus mode and are not shown.',
+                 es: '{n} unidades están fuera del modo Foco y no se muestran.' },
+  notReady:    {
+    en: 'No question has been marked essential yet, so Focus mode has nothing of its own to serve — you are seeing the complete question bank.',
+    es: 'Todavía no hay preguntas marcadas como esenciales, así que el modo Foco no tiene nada propio que mostrar — estás viendo el banco completo de preguntas.',
+  },
 }
 
 export default function StudyLauncher({ units, lang, studyMode }: Props) {
@@ -55,6 +70,23 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
   const isEs = lang === 'es'
   const t = (k: keyof typeof T) => T[k][lang]
   const unitName = (u: UnitRow) => (isEs ? u.titleEs : u.titleEn) ?? u.titleEn
+
+  const inFocus = studyMode === 'focus'
+
+  // Focus mode only means anything once questions are marked essential. Until
+  // then the study screens fall back to the whole bank, and pretending
+  // otherwise — an empty grid, zero counts — would be a lie about the content.
+  const totalEssential = units.reduce((n, u) => n + u.essentialCount, 0)
+  const focusActive    = inFocus && totalEssential > 0
+
+  // What Focus actually serves: units it was not excluded from, that have at
+  // least one essential question in them.
+  const visibleUnits = focusActive
+    ? units.filter((u) => u.focusEnabled && u.essentialCount > 0)
+    : units
+
+  const countOf = (u: UnitRow) => (focusActive ? u.essentialCount : u.questionCount)
+  const hidden  = units.length - visibleUnits.length
 
   const [quickCount, setQuickCount] = useState(10)
   const [weakMode, setWeakMode]     = useState(false)
@@ -125,7 +157,7 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
 
         <select className="select" value={unitSel} onChange={(e) => setUnitSel(e.target.value)}>
           <option value="all">{t('allUnits')}</option>
-          {units.map((u) => (
+          {visibleUnits.map((u) => (
             <option key={u.id} value={u.id}>U{u.id} — {unitName(u)}</option>
           ))}
         </select>
@@ -161,7 +193,7 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
 
         <select className="select" value={examUnit} onChange={(e) => setExamUnit(e.target.value)}>
           <option value="all">{t('fullExam')}</option>
-          {units.map((u) => (
+          {visibleUnits.map((u) => (
             <option key={u.id} value={u.id}>U{u.id} — {unitName(u)}</option>
           ))}
         </select>
@@ -192,21 +224,43 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
       </div>
 
       {/* ── Scope reminder ── */}
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text3)', fontWeight: 700 }}>
-          {t('scope')}
-        </span>
-        <span style={{
-          padding: '5px 11px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700,
-          border: studyMode === 'focus' ? '1px solid rgba(245,158,11,0.45)' : '1px solid rgba(79,142,247,0.45)',
-          background: studyMode === 'focus' ? 'rgba(245,158,11,0.1)' : 'rgba(79,142,247,0.1)',
-          color: studyMode === 'focus' ? 'var(--warning)' : 'var(--accent)',
-        }}>
-          {studyMode === 'focus' ? t('focus') : t('complete')}
-        </span>
-        <a href="/settings" style={{ fontSize: '0.74rem', color: 'var(--text3)', textDecoration: 'underline' }}>
-          {t('change')}
-        </a>
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text3)', fontWeight: 700 }}>
+            {t('scope')}
+          </span>
+          <span style={{
+            padding: '5px 11px', borderRadius: 99, fontSize: '0.74rem', fontWeight: 700,
+            border: inFocus ? '1px solid rgba(245,158,11,0.45)' : '1px solid rgba(79,142,247,0.45)',
+            background: inFocus ? 'rgba(245,158,11,0.1)' : 'rgba(79,142,247,0.1)',
+            color: inFocus ? 'var(--warning)' : 'var(--accent)',
+          }}>
+            {inFocus ? t('focus') : t('complete')}
+          </span>
+          <a href="/settings" style={{ fontSize: '0.74rem', color: 'var(--text3)', textDecoration: 'underline' }}>
+            {t('change')}
+          </a>
+        </div>
+
+        {/* Focus is on but nothing is marked — say so rather than showing an
+            empty screen or, worse, the whole bank under a Focus badge. */}
+        {inFocus && totalEssential === 0 && (
+          <p style={{
+            fontSize: '0.76rem', color: 'var(--warning)', lineHeight: 1.5,
+            marginTop: 10, marginBottom: 0,
+          }}>
+            {t('notReady')}
+          </p>
+        )}
+
+        {focusActive && hidden > 0 && (
+          <p style={{
+            fontSize: '0.76rem', color: 'var(--text3)', lineHeight: 1.5,
+            marginTop: 10, marginBottom: 0,
+          }}>
+            {hidden === 1 ? t('hiddenOne') : t('hiddenMany').replace('{n}', String(hidden))}
+          </p>
+        )}
       </div>
 
       {/* ── Unit grid ── */}
@@ -215,8 +269,9 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
       </div>
 
       <div className="unit-grid">
-        {units.map((u) => {
+        {visibleUnits.map((u) => {
           const pct = u.answered > 0 ? Math.round((u.correct / u.answered) * 100) : 0
+          const n   = countOf(u)
           return (
             <a key={u.id} href={`/study/${u.id}`} className="unit-card" style={{ position: 'relative' }}>
               {u.isPa && (
@@ -249,7 +304,7 @@ export default function StudyLauncher({ units, lang, studyMode }: Props) {
               <div style={{ fontSize: '0.7rem', color: 'var(--text3)', marginTop: 3 }}>
                 {u.answered > 0
                   ? `${pct}% — ${u.correct}/${u.answered}`
-                  : `${u.questionCount} ${t('questions')}`}
+                  : `${n} ${focusActive ? t('essentials') : t('questions')}`}
               </div>
             </a>
           )
