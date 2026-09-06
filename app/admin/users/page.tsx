@@ -181,7 +181,7 @@ export default async function AdminUsersPage({
       </div>
 
       {/* Summary for the accounts on this page */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 [&>*]:min-w-0">
         {[
           { label: 'Paying / trialing',   value: paidCount },
           { label: 'Free access codes',   value: freeCount },

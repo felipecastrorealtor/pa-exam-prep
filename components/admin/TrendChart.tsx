@@ -59,10 +59,10 @@ export default function TrendChart({
   const labelEvery = Math.max(1, Math.ceil(days.length / 8))
 
   return (
-    <div className="card p-5 space-y-3">
-      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+    <div className="card p-5 space-y-3 min-w-0">
+      <div className="flex items-baseline justify-between gap-x-3 gap-y-1 flex-wrap min-w-0">
         <h2 className="font-semibold text-gray-900 dark:text-white">{title}</h2>
-        <ul className="flex flex-wrap gap-x-4 gap-y-1">
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 min-w-0">
           {series.map((s) => (
             <li key={s.label} className="flex items-center gap-1.5 text-xs text-gray-500">
               <span className="inline-block h-2 w-2 rounded-full" style={{ background: s.color }} />
@@ -78,7 +78,7 @@ export default function TrendChart({
         <div className="overflow-x-auto">
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            className="w-full min-w-[420px] h-[200px]"
+            className="w-full min-w-[320px] h-[200px]"
             role="img"
             aria-label={`${title}. ${series.map((s) => `${s.label}: ${s.values.reduce((a, b) => a + b, 0)} over ${days.length} days`).join('. ')}`}
             onMouseLeave={() => setHover(null)}

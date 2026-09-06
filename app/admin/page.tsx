@@ -87,7 +87,7 @@ export default async function AdminDashboard({
       )}
 
       {/* ── Row 1: who is here and what they pay ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
         <StatCard
           label="Total users" accent="blue"
           value={u ? String(u.total) : '—'}
@@ -116,7 +116,7 @@ export default async function AdminDashboard({
       </div>
 
       {/* ── Row 2: are they using it, and is it working ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 [&>*]:min-w-0">
         <StatCard
           label="Active today" accent="emerald"
           value={a ? String(a.activeToday) : '—'}
@@ -147,7 +147,7 @@ export default async function AdminDashboard({
       </div>
 
       {/* ── Charts ── */}
-      <div className="grid xl:grid-cols-2 gap-6">
+      <div className="grid xl:grid-cols-2 gap-6 [&>*]:min-w-0">
         {d.growth ? (
           <TrendChart
             title="User growth"
@@ -184,7 +184,7 @@ export default async function AdminDashboard({
       </div>
 
       {/* ── Needs attention + quick actions ── */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-6 [&>*]:min-w-0">
         <div className="card p-5 space-y-3 lg:col-span-2">
           <h2 className="font-semibold text-gray-900 dark:text-white">Needs attention</h2>
 
@@ -248,7 +248,7 @@ export default async function AdminDashboard({
           <p className="text-sm text-amber-600 dark:text-amber-400">This section could not be loaded.</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 [&>*]:min-w-0">
               <StatCard label="Average score" accent="emerald"
                 value={l.avgAccuracy != null ? `${l.avgAccuracy}%` : '—'}
                 hint="Mean of every student's own accuracy across all their answers."
@@ -275,7 +275,7 @@ export default async function AdminDashboard({
                 empty="No streaks yet" />
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-6 [&>*]:min-w-0">
               {/* Hardest units */}
               <div className="card p-5 space-y-3">
                 <div className="flex items-baseline justify-between gap-2">
