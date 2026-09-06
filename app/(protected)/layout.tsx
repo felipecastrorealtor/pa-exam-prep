@@ -56,6 +56,7 @@ export default async function ProtectedLayout({
         displayName={profile?.display_name ?? ''}
         lang={profile?.preferred_lang ?? 'en'}
         subscriptionStatus={profile?.subscription_status ?? null}
+        subscriptionExpiresAt={profile?.subscription_expires_at ?? null}
       />
       {/* top padding = topbar height, bottom padding = bottom nav height */}
       <main style={{

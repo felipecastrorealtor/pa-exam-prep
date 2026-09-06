@@ -13,6 +13,7 @@ interface AppNavProps {
   displayName:        string
   lang:               string
   subscriptionStatus: string | null
+  subscriptionExpiresAt?: string | null
 }
 
 // Bottom nav items matching the original app
@@ -93,13 +94,41 @@ function AppIconLogo() {
   )
 }
 
-export default function AppNav({ userEmail, displayName, lang, subscriptionStatus }: AppNavProps) {
+export default function AppNav({
+  userEmail,
+  displayName,
+  lang,
+  subscriptionStatus,
+  subscriptionExpiresAt,
+}: AppNavProps) {
   const pathname = usePathname()
   const router   = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
   const supabase = createClient()
 
   const isEs = lang === 'es'
+
+  // What free access actually says on the badge. A code can grant 30 days, a
+  // year, or effectively forever, so the label comes from the expiry date:
+  // years while there is more than one left, then months, then days — and once
+  // it is far enough out to be a lifetime grant, it just says Free.
+  const freeLabel = (() => {
+    if (!subscriptionExpiresAt) return isEs ? 'Libre' : 'Free'
+    const days = Math.ceil(
+      (new Date(subscriptionExpiresAt).getTime() - Date.now()) / 86_400_000,
+    )
+    if (days <= 0)   return isEs ? 'Vencido' : 'Expired'
+    if (days > 3650) return isEs ? 'Libre' : 'Free'
+    // Count in months first, so a 365-day grant does not flip from "1y" to
+    // "12mo" the morning after it is redeemed.
+    const months = Math.round(days / 30)
+    if (months >= 12) {
+      const y = Math.round(days / 365)
+      return isEs ? `${y} año${y === 1 ? '' : 's'}` : `${y}y Free`
+    }
+    if (days >= 60) return isEs ? `${months} meses` : `${months}mo Free`
+    return isEs ? `${days} días` : `${days}d Free`
+  })()
   const [switching, setSwitching] = useState(false)
 
   async function toggleLang() {
@@ -195,9 +224,9 @@ export default function AppNav({ userEmail, displayName, lang, subscriptionStatu
               border: '1px solid currentColor',
               letterSpacing: '0.04em',
             }}>
-              {subscriptionStatus === 'active'     ? 'Active'   :
-               subscriptionStatus === 'trialing'   ? 'Trial'    :
-               subscriptionStatus === 'free_access'? '30d Free' : subscriptionStatus}
+              {subscriptionStatus === 'active'      ? 'Active' :
+               subscriptionStatus === 'trialing'    ? 'Trial'  :
+               subscriptionStatus === 'free_access' ? freeLabel : subscriptionStatus}
             </span>
           )}
 
