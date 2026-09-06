@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import ScreenTour from '@/components/landing/ScreenTour'
 
 type Lang = 'en' | 'es'
 
@@ -228,6 +229,8 @@ export default function LandingContent() {
         .lbtn-ghost:hover { border-color:rgba(255,255,255,.3)!important }
         .lbtn-primary:hover { background:#6ba3f8!important }
         .lbtn-white:hover { background:#e0eaff!important }
+        .ltour-rail { scrollbar-width: none; -ms-overflow-style: none }
+        .ltour-rail::-webkit-scrollbar { display: none }
         .lfooter-link:hover { color:#94a3b8!important }
         }
       `}</style>
@@ -313,6 +316,9 @@ export default function LandingContent() {
           })}
         </div>
       </section>
+
+      {/* The app itself — five screens, example data */}
+      <ScreenTour lang={lang} />
 
       {/* Units */}
       <section style={{ borderTop: '1px solid rgba(255,255,255,.07)', borderBottom: '1px solid rgba(255,255,255,.07)', background: 'rgba(255,255,255,.02)' }}>
