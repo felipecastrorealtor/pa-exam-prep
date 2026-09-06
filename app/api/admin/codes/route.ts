@@ -120,14 +120,19 @@ export async function PATCH(req: NextRequest) {
   }
 
   const admin = await createAdminClient()
-  const { error } = await admin
+  const { data, error } = await admin
     .from('access_codes')
     .update({ active: body.active })
     .eq('id', body.id)
+    .select('id')
 
   if (error) {
     console.error('[admin/codes] update failed:', error.message)
     return NextResponse.json({ error: 'update_failed' }, { status: 500 })
+  }
+  if (!data || data.length === 0) {
+    console.error('[admin/codes] update affected no rows for', body.id)
+    return NextResponse.json({ error: 'no_rows_updated' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })

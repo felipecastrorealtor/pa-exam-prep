@@ -45,7 +45,15 @@ export async function PATCH(req: NextRequest) {
   }
 
   const admin = await createAdminClient()
-  const { error } = await admin.from('units').update(patch).eq('id', id)
+  // .select() so a write that matched no row can be told apart from one that
+  // worked. Without it PostgREST answers 204 either way, and a blocked update
+  // looks exactly like a successful one.
+  const { data, error } = await admin.from('units').update(patch).eq('id', id).select('id')
+
+  if (!error && (!data || data.length === 0)) {
+    console.error('[admin/units] update affected no rows for unit', id)
+    return NextResponse.json({ error: 'no_rows_updated' }, { status: 500 })
+  }
 
   if (error) {
     const missing = /focus_enabled/.test(error.message)

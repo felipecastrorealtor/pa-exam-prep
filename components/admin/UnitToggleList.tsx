@@ -81,7 +81,9 @@ export default function UnitToggleList({
             ? 'Run migration 011 first — units.focus_enabled is missing.'
             : json.error === 'forbidden'
               ? 'This account is not an admin.'
-              : 'Could not save that change.',
+              : json.error === 'no_rows_updated'
+                ? 'The database accepted the request but changed nothing. Reload and try again.'
+                : 'Could not save that change.',
         )
       }
     } catch {
