@@ -169,6 +169,10 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
 
   return (
     <QuizSession
+      // Same route, different query = same mounted component unless the key
+      // changes. Without this, switching from exam to review leaves the old
+      // session's state — and its finished screen — on top of the new props.
+      key={[params.unitId, searchParams.mode ?? 'quiz', searchParams.pick ?? '', searchParams.limit ?? '', searchParams.scope ?? ''].join('|')}
       unitId={isAll ? null : unitId}
       unitTitleEn={titleEn}
       unitTitleEs={titleEs}

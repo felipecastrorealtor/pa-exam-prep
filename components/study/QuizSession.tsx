@@ -515,7 +515,7 @@ export default function QuizSession({
                 {lang === 'es' ? 'Estudiar de nuevo' : 'Study again'}
               </button>
               <button
-                onClick={() => router.push(`/study/${unitId ?? 'all'}?mode=review`)}
+                onClick={() => router.push(`/study/${unitId ?? 'all'}?mode=review&limit=${questions.length}`)}
                 className="btn-ghost w-full"
               >
                 {lang === 'es' ? 'Modo repaso' : 'Review mode'}
