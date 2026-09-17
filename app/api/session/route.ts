@@ -40,7 +40,9 @@ export async function POST(req: NextRequest) {
     .insert({
       user_id:            user.id,
       session_type:       sessionType,
-      unit_id:            unitId ?? null,
+      // ?? only catches null and undefined, so a 0 from an older client
+      // used to reach the foreign key and fail the whole insert.
+      unit_id:            typeof unitId === 'number' && unitId > 0 ? unitId : null,
       questions_answered: questionsAnswered,
       correct,
       duration_sec:       durationSec ?? null,

@@ -169,7 +169,7 @@ export default async function UnitStudyPage({ params, searchParams }: Props) {
 
   return (
     <QuizSession
-      unitId={isAll ? 0 : unitId}
+      unitId={isAll ? null : unitId}
       unitTitleEn={titleEn}
       unitTitleEs={titleEs}
       questions={serializedQuestions}

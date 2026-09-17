@@ -30,7 +30,8 @@ export interface SerializedQuestion {
 }
 
 interface Props {
-  unitId: number
+  /** null = an all-units session. Never 0: there is no unit 0. */
+  unitId: number | null
   unitTitleEn: string
   unitTitleEs: string | null
   questions: SerializedQuestion[]
@@ -40,6 +41,9 @@ interface Props {
 
 type AnswerLetter = 'A' | 'B' | 'C' | 'D'
 const LETTERS: AnswerLetter[] = ['A', 'B', 'C', 'D']
+
+/** PSI's cut score for the Pennsylvania salesperson exam. */
+const PASS_MARK = 75
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -114,6 +118,12 @@ export default function QuizSession({
   const [examAnswers, setExamAnswers] = useState<Record<string, AnswerLetter>>({})
   const [examResults, setExamResults] = useState<Record<string, boolean>>({}) // questionId → correct
   const [reviewWrongOnly, setReviewWrongOnly] = useState(false)
+  // True while the answers are being written to the server after the exam.
+  const [grading, setGrading]         = useState(false)
+  const [confirmFinish, setConfirmFinish] = useState(false)
+  // Guards a second grading pass — the Finish button and the final answer can
+  // both fire, and each one would spend the attempts again.
+  const gradingRef = useRef(false)
 
   // ── Timer ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -263,6 +273,47 @@ export default function QuizSession({
     } catch { /* non-critical */ }
   }, [unitId, mode, lang])
 
+  // ── Finish the exam ───────────────────────────────────────────────────────
+  // The score is known locally the moment the answers are in, so the result
+  // shows at once and the writing to the server happens behind it. An exam
+  // that cannot be graded because the network dropped is still a graded exam
+  // to the student in front of it.
+  const finishExam = useCallback(async (
+    answersArg?: Record<string, AnswerLetter>,
+  ) => {
+    if (gradingRef.current) return
+    gradingRef.current = true
+
+    const answers = answersArg ?? examAnswers
+    stopTimer()
+
+    let finalCorrect = 0
+    const results: Record<string, boolean> = {}
+    for (const [qId, letter] of Object.entries(answers)) {
+      const question = questions.find((x) => x.id === qId)
+      if (!question) continue
+      const isCorrect = letter === question.correct
+      results[qId] = isCorrect
+      if (isCorrect) finalCorrect += 1
+    }
+    const finalAnswered = Object.keys(results).length
+
+    setExamResults(results)
+    setAnswered(finalAnswered)
+    setCorrect(finalCorrect)
+    setGrading(true)
+    setDone(true)
+
+    await Promise.allSettled(
+      Object.entries(answers).map(([qId, letter]) => {
+        const question = questions.find((x) => x.id === qId)
+        return question ? submitAnswer(question, letter) : Promise.resolve(false)
+      }),
+    )
+    await submitSession(finalAnswered, finalCorrect)
+    setGrading(false)
+  }, [examAnswers, questions, stopTimer, submitAnswer, submitSession])
+
   // ── Answer handler (quiz / review) ────────────────────────────────────────
   const handleAnswer = useCallback(async (letter: AnswerLetter) => {
     if (revealed || submitting) return
@@ -270,20 +321,19 @@ export default function QuizSession({
     setSelected(letter)
 
     if (mode === 'exam') {
-      // Exam: record locally, no feedback, auto-advance
-      setExamAnswers((prev) => ({ ...prev, [q.id]: letter }))
-      // brief highlight then advance
+      // Exam: record locally, no feedback, auto-advance.
+      const answers = { ...examAnswers, [q.id]: letter }
+      setExamAnswers(answers)
+
+      const isLast = idx + 1 >= questions.length
+      // Brief highlight, then move on — or grade, if that was the last one.
       setTimeout(() => {
-        setIdx((prev) => {
-          const next = prev + 1
-          if (next >= questions.length) {
-            // All questions answered — calculate results
-            setDone(true)
-            stopTimer()
-          }
-          return Math.min(next, questions.length - 1)
-        })
-        setSelected(null)
+        if (isLast) {
+          void finishExam(answers)
+        } else {
+          setIdx(idx + 1)
+          setSelected(null)
+        }
       }, 350)
       return
     }
@@ -293,7 +343,7 @@ export default function QuizSession({
     const isCorrect = await submitAnswer(q, letter)
     setAnswered((prev) => prev + 1)
     if (isCorrect) setCorrect((prev) => prev + 1)
-  }, [revealed, submitting, mode, q, questions.length, stopTimer, submitAnswer])
+  }, [revealed, submitting, mode, q, idx, questions.length, examAnswers, finishExam, submitAnswer])
 
   // ── Advance to next / finish ───────────────────────────────────────────────
   const handleNext = useCallback(async () => {
@@ -303,34 +353,18 @@ export default function QuizSession({
       stopTimer()
 
       if (mode === 'exam') {
-        // Submit all exam answers
-        let finalCorrect = 0
-        const results: Record<string, boolean> = {}
-        const submissions = Object.entries(examAnswers).map(async ([qId, letter]) => {
-          const question = questions.find((x) => x.id === qId)
-          if (!question) return
-          const isCorrect = letter === question.correct
-          results[qId] = isCorrect
-          if (isCorrect) finalCorrect++
-          await submitAnswer(question, letter)
-        })
-        await Promise.allSettled(submissions)
-        setExamResults(results)
-        const finalAnswered = Object.keys(examAnswers).length
-        setAnswered(finalAnswered)
-        setCorrect(finalCorrect)
-        await submitSession(finalAnswered, finalCorrect)
-      } else {
-        await submitSession(answered + (revealed ? 0 : 0), correct)
+        await finishExam()
+        return
       }
 
+      await submitSession(answered, correct)
       setDone(true)
     } else {
       setIdx(nextIdx)
       setSelected(null)
       setRevealed(false)
     }
-  }, [idx, questions, mode, examAnswers, answered, correct, revealed, stopTimer, submitAnswer, submitSession])
+  }, [idx, questions.length, mode, answered, correct, stopTimer, finishExam, submitSession])
 
   // ── Restart ────────────────────────────────────────────────────────────────
   const restart = useCallback(() => {
@@ -346,6 +380,9 @@ export default function QuizSession({
     setAchievements([])
     setExamAnswers({})
     setExamResults({})
+    setGrading(false)
+    setConfirmFinish(false)
+    gradingRef.current = false
     timerRef.current = setInterval(
       () => setElapsed(Math.floor((Date.now() - sessionStart.current) / 1000)),
       1000
@@ -386,9 +423,23 @@ export default function QuizSession({
             <div className="text-5xl">{emoji}</div>
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {lang === 'es' ? 'Sesión completa' : 'Session complete'}
+                {mode === 'exam'
+                  ? (lang === 'es' ? 'Simulacro completo' : 'Mock exam complete')
+                  : (lang === 'es' ? 'Sesión completa' : 'Session complete')}
               </h2>
               <p className="text-sm text-gray-500 mt-1">{unitTitle}</p>
+
+              {/* A mock exam has a passing mark; a practice round does not. */}
+              {mode === 'exam' && answered > 0 && (
+                <p className={clsx(
+                  'text-sm font-semibold mt-2',
+                  pct >= PASS_MARK ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400',
+                )}>
+                  {pct >= PASS_MARK
+                    ? (lang === 'es' ? `Aprobado — la nota de corte es ${PASS_MARK}%` : `Passed — the cut score is ${PASS_MARK}%`)
+                    : (lang === 'es' ? `Por debajo de ${PASS_MARK}% — sigue practicando` : `Below ${PASS_MARK}% — keep practising`)}
+                </p>
+              )}
             </div>
 
             {/* Circular score */}
@@ -418,13 +469,17 @@ export default function QuizSession({
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{answered}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {mode === 'exam' ? `${answered}/${questions.length}` : answered}
+                </p>
                 <p className="text-xs text-gray-500">
                   {lang === 'es' ? 'respondidas' : 'answered'}
                 </p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-500">+{sessionXP}</p>
+                <p className="text-2xl font-bold text-emerald-500">
+                  {grading ? '…' : `+${sessionXP}`}
+                </p>
                 <p className="text-xs text-gray-500">XP</p>
               </div>
               <div>
@@ -460,7 +515,7 @@ export default function QuizSession({
                 {lang === 'es' ? 'Estudiar de nuevo' : 'Study again'}
               </button>
               <button
-                onClick={() => router.push(`/study/${unitId}?mode=review`)}
+                onClick={() => router.push(`/study/${unitId ?? 'all'}?mode=review`)}
                 className="btn-ghost w-full"
               >
                 {lang === 'es' ? 'Modo repaso' : 'Review mode'}
@@ -806,6 +861,40 @@ export default function QuizSession({
               />
             </div>
           )}
+
+          {/* Finish — exam mode only, available from the first question */}
+          {mode === 'exam' && !done && (() => {
+            const left = questions.length - Object.keys(examAnswers).length
+            if (confirmFinish && left > 0) {
+              return (
+                <div className="card p-4 space-y-3 border-amber-300 dark:border-amber-800">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {lang === 'es'
+                      ? `Te quedan ${left} pregunta${left === 1 ? '' : 's'} sin responder. Contarán como incorrectas.`
+                      : `${left} question${left === 1 ? '' : 's'} still unanswered. They will count as wrong.`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={() => setConfirmFinish(false)} className="btn-ghost flex-1">
+                      {lang === 'es' ? 'Seguir respondiendo' : 'Keep answering'}
+                    </button>
+                    <button onClick={() => void finishExam()} className="btn-primary flex-1">
+                      {lang === 'es' ? 'Entregar igual' : 'Hand it in'}
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <button
+                onClick={() => (left > 0 ? setConfirmFinish(true) : void finishExam())}
+                className={left > 0 ? 'btn-ghost w-full' : 'btn-primary w-full'}
+              >
+                {left > 0
+                  ? (lang === 'es' ? `Terminar simulacro (${left} sin responder)` : `Finish exam (${left} unanswered)`)
+                  : (lang === 'es' ? 'Ver resultados →' : 'See results →')}
+              </button>
+            )
+          })()}
 
           {/* Next button — shown after answering in quiz/review */}
           {revealed && (
