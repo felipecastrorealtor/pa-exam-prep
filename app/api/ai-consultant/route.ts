@@ -13,7 +13,14 @@ const MODELS = (process.env.GEMINI_MODEL ?? 'gemini-3.1-flash-lite,gemini-3.5-fl
   .split(',').map((m) => m.trim()).filter(Boolean)
 
 // Bail out before the platform kills us, so the client always gets JSON.
-const UPSTREAM_TIMEOUT_MS = 8000
+// 8s is the Netlify figure — its free-tier functions are killed at 10s.
+// Vercel allows 300s, so there AI_UPSTREAM_TIMEOUT_MS can be raised and
+// GEMINI_MODEL pointed at the reasoning model that was too slow to use here.
+const UPSTREAM_TIMEOUT_MS = Number(process.env.AI_UPSTREAM_TIMEOUT_MS ?? 8000)
+
+// Ignored by Netlify, honoured by Vercel. Only an upper bound: the request
+// still ends when UPSTREAM_TIMEOUT_MS above fires.
+export const maxDuration = 60
 
 const SYSTEM_PROMPT = `Eres un experto en Real Estate de Pennsylvania y Federal (USA). Tu función es ayudar a estudiantes que se preparan para el examen de licencia de bienes raíces de Pennsylvania (PSI exam).
 
