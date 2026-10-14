@@ -21,6 +21,29 @@ const STATUS_LABEL: Record<string, string> = {
   free_access: 'Free access (code)',
 }
 
+// Every API this page calls needs a session, and answers 401 with
+// {"error":"unauthenticated"} when there isn't one. That string used to reach
+// the screen verbatim on the subscribe tab, and on the access-code tab it fell
+// through to "Invalid access code." — telling someone their perfectly good code
+// was bad when the only problem was that they were signed out.
+const ERROR_MESSAGES: Record<string, string> = {
+  unauthenticated: 'You need to be signed in before you can do this.',
+  invalid_code:    'That code is invalid.',
+  inactive_code:   'That code is no longer active.',
+  expired_code:    'That code has expired.',
+  used_up:         'That code has reached its usage limit.',
+  no_customer:     'There is no billing account to manage yet.',
+}
+
+// The server sends two kinds of error: machine codes like `expired_code` and
+// real sentences. Show the sentence, translate the code, and never print an
+// untranslated code at a student.
+function friendly(raw: unknown, fallback: string): string {
+  if (typeof raw !== 'string' || !raw) return fallback
+  if (ERROR_MESSAGES[raw]) return ERROR_MESSAGES[raw]
+  return /^[a-z0-9_]+$/.test(raw) ? fallback : raw
+}
+
 export default function SubscribePage() {
   const router = useRouter()
   const [promoCode, setPromoCode]   = useState('')
@@ -39,15 +62,24 @@ export default function SubscribePage() {
   // person actually has a session — which, with email confirmation on, is the
   // first time they sign in. This is that moment.
   const [autoRedeem, setAutoRedeem] = useState<'idle' | 'working' | 'failed'>('idle')
+  // null = not known yet. This page is public, so a signed-out person can reach
+  // it — from a link shared in WhatsApp, say, whose in-app browser has its own
+  // cookie store and therefore no session at all.
+  const [authed, setAuthed] = useState<boolean | null>(null)
 
   // Ask the server for eligibility AND current access, so we never promise a
   // trial the account cannot have, nor sell a subscription it already holds.
+  // The same call tells us whether there is a session: 401 means there isn't.
   useEffect(() => {
     let alive = true
     fetch('/api/stripe/checkout')
-      .then((r) => (r.ok ? r.json() : {}))
+      .then(async (r) => {
+        if (!alive) return null
+        setAuthed(r.status !== 401)
+        return r.ok ? await r.json().catch(() => ({})) : {}
+      })
       .then((j) => {
-        if (!alive) return
+        if (!alive || j === null) return
         setTrialUsed(j?.trialUsed ?? null)
         setSub({
           isSubscribed:     Boolean(j?.isSubscribed),
@@ -59,6 +91,23 @@ export default function SubscribePage() {
       .catch(() => { if (alive) { setTrialUsed(null); setSub(null) } })
     return () => { alive = false }
   }, [])
+
+  // Someone sent here to sign in first comes back with their code in the URL,
+  // so it is not lost between the two pages.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (code?.trim()) {
+      setAccessCode(code.trim().toUpperCase())
+      setTab('code')
+    }
+  }, [])
+
+  // Sign in, then come straight back here with whatever was typed.
+  function goToLogin(target: 'login' | 'register') {
+    const code = accessCode.trim().toUpperCase()
+    const back = code ? `/subscribe?code=${encodeURIComponent(code)}` : '/subscribe'
+    router.push(`/${target}?redirect=${encodeURIComponent(back)}`)
+  }
 
   useEffect(() => {
     // Only once we know the account has no access — never against a person who
@@ -96,17 +145,14 @@ export default function SubscribePage() {
 
         if (!alive) return
         setAutoRedeem('failed')
-        const msgs: Record<string, string> = {
-          invalid_code:  'That code is invalid.',
-          inactive_code: 'That code is no longer active.',
-          expired_code:  'That code has expired.',
-          used_up:       'That code has reached its usage limit.',
-        }
         // Hand the code back in the field, so redeeming is one tap and not a
         // hunt through an old email.
         setAccessCode(pending.trim().toUpperCase())
         setTab('code')
-        setError(msgs[json.error] ?? 'We could not apply your access code automatically. Try it once more below.')
+        setError(friendly(
+          json.error,
+          'We could not apply your access code automatically. Try it once more below.',
+        ))
       } catch {
         if (!alive) return
         setAutoRedeem('failed')
@@ -159,12 +205,19 @@ export default function SubscribePage() {
         return
       }
 
-      setError(
-        json.error ??
-        (res.status === 401
-          ? 'Your session expired. Please sign in again.'
-          : 'Could not start checkout. Please try again.')
-      )
+      // 401 is not a checkout failure, it is a missing session. Say so and
+      // take them to sign in, instead of printing `unauthenticated` and
+      // leaving them staring at a dead button.
+      if (res.status === 401) {
+        setAuthed(false)
+        setError('Please sign in first — then we will bring you straight back here.')
+        setLoading(false)
+        setPending(null)
+        goToLogin('login')
+        return
+      }
+
+      setError(friendly(json.error, 'Could not start checkout. Please try again.'))
     } catch {
       setError('Network error. Check your connection and try again.')
     }
@@ -215,13 +268,18 @@ export default function SubscribePage() {
         router.refresh()
         return
       }
-      const msgs: Record<string, string> = {
-        invalid_code:  'That code is invalid.',
-        inactive_code: 'That code is no longer active.',
-        expired_code:  'That code has expired.',
-        used_up:       'That code has reached its usage limit.',
+      // The code may be perfectly good — a signed-out visitor got told it was
+      // invalid, which sent at least one student hunting for a problem that
+      // was never in the code.
+      if (res.status === 401) {
+        setAuthed(false)
+        setError('Your code looks fine — you just need an account first. We will bring you right back.')
+        setLoading(false)
+        goToLogin('login')
+        return
       }
-      setError(msgs[json.error] ?? 'Invalid access code.')
+
+      setError(friendly(json.error, 'Invalid access code.'))
     } catch {
       setError('Network error. Check your connection and try again.')
     }
@@ -332,6 +390,30 @@ export default function SubscribePage() {
           </>
         ) : (
           <>
+            {/* Signed out: say so before they tap anything. Both paths on this
+                page need an account, and without this the only feedback was an
+                error after the fact. */}
+            {authed === false ? (
+              <div className="card space-y-3">
+                <h2 className="font-semibold text-slate-100">First, your account</h2>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Subscribing and redeeming an access code both need you signed in.
+                  It takes a moment, and we will bring you straight back to this page.
+                </p>
+                <div className="flex gap-2">
+                  <button onClick={() => goToLogin('login')} className="btn-primary flex-1">
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => goToLogin('register')}
+                    className="flex-1 text-sm text-slate-300 hover:text-slate-100 border border-slate-700 hover:border-slate-500 rounded-xl px-4 py-3 transition-colors"
+                  >
+                    Create account
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {/* Tab switcher */}
             <div className="flex bg-slate-900 rounded-xl p-1 border border-slate-800">
               {[
