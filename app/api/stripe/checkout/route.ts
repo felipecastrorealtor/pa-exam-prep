@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { hasAccess } from '@/lib/access'
-import { createCheckoutSession, hasStripeSubscriptionHistory } from '@/lib/stripe'
+import { createCheckoutSession, hasStripeSubscriptionHistory, InvalidPromoCodeError } from '@/lib/stripe'
 
 /**
  * POST /api/stripe/checkout
@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
     // trial the account is not entitled to.
     return NextResponse.json({ url: session.url, withTrial, trialUsed })
   } catch (err) {
+    // A code that does not exist is the person's typo, not a server fault.
+    // 400 with a precise message, so the page can point at the field instead
+    // of showing "could not start checkout".
+    if (err instanceof InvalidPromoCodeError) {
+      return NextResponse.json({ error: 'invalid_promo_code' }, { status: 400 })
+    }
+
     const e = err as { message?: string; type?: string }
     console.error('[stripe/checkout] failed:', e?.type, e?.message)
 
@@ -86,7 +93,7 @@ export async function POST(req: NextRequest) {
     const raw = e?.message ?? ''
     const msg = /No such price|STRIPE_PRICE_MONTHLY/i.test(raw)
       ? 'Billing is not configured correctly yet. Please contact support.'
-      : /STRIPE_COUPON_PROMO|No such coupon/i.test(raw)
+      : /No such coupon|No such promotion code/i.test(raw)
       ? 'That promo code is not available right now. Try again without it.'
       : /API key|Invalid API Key|publishable|API version|Managed Payments/i.test(raw)
       ? 'Billing is not configured correctly yet. Please contact support.'

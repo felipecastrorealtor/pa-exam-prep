@@ -21,8 +21,28 @@ export const PLANS = {
   },
 } as const
 
-// Promo coupon — applied at checkout for $15/mo permanent discount
-export const PROMO_COUPON_ID = process.env.STRIPE_COUPON_PROMO!
+// A code the person typed is resolved against Stripe's own promotion codes.
+// There used to be a single coupon id in STRIPE_COUPON_PROMO that was applied
+// whatever they typed — so any text at all bought the discount, and someone
+// who simply noticed the field got it without knowing a code.
+export class InvalidPromoCodeError extends Error {
+  constructor(public readonly code: string) {
+    super(`No active Stripe promotion code matches "${code}"`)
+    this.name = 'InvalidPromoCodeError'
+  }
+}
+
+// Stripe's `code` filter is an exact match, and the field upper-cases what the
+// person types, so a code created in lower case would never be found. Try the
+// text as given and as typed-upper before giving up.
+async function findPromotionCode(typed: string) {
+  const tries = Array.from(new Set([typed.trim(), typed.trim().toUpperCase()])).filter(Boolean)
+  for (const code of tries) {
+    const found = await stripe.promotionCodes.list({ code, active: true, limit: 1 })
+    if (found.data.length > 0) return found.data[0]
+  }
+  return null
+}
 
 // Create a Stripe Checkout session for subscription.
 //
@@ -85,13 +105,14 @@ export async function createCheckoutSession({
     }
   }
 
-  // Only apply the internal coupon when one is actually configured; passing an
-  // undefined coupon id makes Stripe reject the whole session.
-  if (promoCode) {
-    if (!PROMO_COUPON_ID) {
-      throw new Error('A promo code was supplied but STRIPE_COUPON_PROMO is not configured')
-    }
-    params.discounts = [{ coupon: PROMO_COUPON_ID }]
+  // Apply the code the person actually typed, or refuse it. Silently handing
+  // out a discount for the wrong text is worse than saying "that code is not
+  // valid" — the person at least learns something true.
+  if (promoCode?.trim()) {
+    const promotion = await findPromotionCode(promoCode)
+    if (!promotion) throw new InvalidPromoCodeError(promoCode.trim())
+
+    params.discounts = [{ promotion_code: promotion.id }]
     // Stripe rejects discounts and allow_promotion_codes together.
     delete params.allow_promotion_codes
   }

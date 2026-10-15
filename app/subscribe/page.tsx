@@ -29,6 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
 // was bad when the only problem was that they were signed out.
 const ERROR_MESSAGES: Record<string, string> = {
   unauthenticated: 'You need to be signed in before you can do this.',
+  invalid_promo_code: 'That promo code is not valid. Check the spelling, or leave the field empty.',
   invalid_code:    'That code is invalid.',
   inactive_code:   'That code is no longer active.',
   expired_code:    'That code has expired.',
