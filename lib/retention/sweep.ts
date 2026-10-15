@@ -12,16 +12,24 @@
  *
  * This file holds the whole sweep so that the Netlify scheduled function and
  * the Vercel cron route are the same code running in two places, not two
- * copies drifting apart. The Stripe webhook was allowed to exist as two
+ * copies drifting apart.
+ *
+ * Who counts as still having access is lib/access.ts — the same rule the
+ * /study gate uses. This file used to carry its own copy, which meant an
+ * admin with a cancelled card would have had their study data stamped for
+ * deletion a year out and been emailed about it, while still being let into
+ * the app. Two answers to one question is how that happens. The Stripe webhook was allowed to exist as two
  * copies and the comment in one of them ended up describing a rewrite that
  * was never configured; this avoids repeating that.
  */
 
 import { createClient } from '@supabase/supabase-js'
+// Relative, not the @/ alias: this module is also bundled by Netlify's esbuild
+// for the scheduled function, which does not read tsconfig path aliases.
+import { hasAccess } from '../access'
 
 const DAY = 86_400_000
 
-const ACTIVE = new Set(['active', 'trialing', 'past_due'])
 
 function config() {
   const retentionDays = Number(process.env.RETENTION_DAYS ?? 365)
@@ -56,6 +64,7 @@ export interface SweepSummary {
 interface ProfileRow {
   id: string
   email: string
+  role: string | null
   display_name: string | null
   preferred_lang: string | null
   subscription_status: string | null
@@ -65,14 +74,6 @@ interface ProfileRow {
   purge_warned_60_at: string | null
   purge_warned_30_at: string | null
   progress_purged_at: string | null
-}
-
-function hasAccess(p: ProfileRow, now: number): boolean {
-  if (ACTIVE.has(p.subscription_status ?? '')) return true
-  if (p.subscription_status === 'free_access') {
-    return !p.subscription_expires_at || new Date(p.subscription_expires_at).getTime() > now
-  }
-  return false
 }
 
 function daysSince(iso: string, now: number): number {
@@ -203,7 +204,7 @@ export async function runRetentionSweep(): Promise<SweepSummary> {
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('id, email, display_name, preferred_lang, subscription_status, subscription_expires_at, updated_at, lapsed_at, purge_warned_60_at, purge_warned_30_at, progress_purged_at')
+    .select('id, email, display_name, preferred_lang, role, subscription_status, subscription_expires_at, updated_at, lapsed_at, purge_warned_60_at, purge_warned_30_at, progress_purged_at')
 
   if (error) {
     throw new Error(`could not read profiles: ${error.message}`)
@@ -213,7 +214,7 @@ export async function runRetentionSweep(): Promise<SweepSummary> {
     summary.scanned += 1
     try {
       /* 1. Access is back — stop the clock and forget the warnings. */
-      if (hasAccess(p, now)) {
+      if (hasAccess(p)) {
         if (p.lapsed_at || p.purge_warned_60_at || p.purge_warned_30_at) {
           await supabaseAdmin.from('profiles').update({
             lapsed_at: null, purge_warned_60_at: null, purge_warned_30_at: null,
