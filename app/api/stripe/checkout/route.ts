@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { hasAccess } from '@/lib/access'
 import { createCheckoutSession, hasStripeSubscriptionHistory } from '@/lib/stripe'
 
 /**
@@ -107,7 +108,7 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('stripe_customer_id, trial_used_at, subscription_status, subscription_expires_at')
+      .select('stripe_customer_id, trial_used_at, subscription_status, subscription_expires_at, role')
       .eq('id', user.id)
       .single()
 
@@ -116,6 +117,7 @@ export async function GET() {
       trial_used_at: string | null
       subscription_status: string | null
       subscription_expires_at: string | null
+      role: string | null
     } | null
 
     let trialUsed = Boolean(p?.trial_used_at)
@@ -130,7 +132,10 @@ export async function GET() {
     // The page needs to know whether this account ALREADY has access, so it can
     // show the subscribed state instead of asking a paying member to pay again.
     const status = p?.subscription_status ?? null
-    const isSubscribed = ['active', 'trialing', 'past_due', 'free_access'].includes(status ?? '')
+    // Same rule as the gate that guards /study. When these two disagreed, the
+    // gate sent the person here and this told them they were already
+    // subscribed, which is a loop with no way out.
+    const isSubscribed = hasAccess(p)
 
     return NextResponse.json({
       trialUsed,

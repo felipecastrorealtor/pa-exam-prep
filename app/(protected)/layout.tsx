@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppNav from '@/components/layout/AppNav'
+import { hasAccess, planLabel } from '@/lib/access'
 import { Suspense } from 'react'
 import AnalyticsProvider from '@/components/analytics/AnalyticsProvider'
 
@@ -19,19 +20,13 @@ export default async function ProtectedLayout({
   // Fetch profile for nav
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, preferred_lang, subscription_status, subscription_expires_at')
+    .select('display_name, preferred_lang, subscription_status, subscription_expires_at, role')
     .eq('id', user.id)
     .single()
 
-  // Subscription check (belt-and-suspenders after middleware)
-  const isActive =
-    profile?.subscription_status === 'active' ||
-    profile?.subscription_status === 'trialing' ||
-    (profile?.subscription_status === 'free_access' &&
-      profile.subscription_expires_at &&
-      new Date(profile.subscription_expires_at) > new Date())
-
-  if (!isActive) redirect('/subscribe')
+  // Belt-and-suspenders after middleware — same rules, same file, so the two
+  // can no longer disagree about who gets in.
+  if (!hasAccess(profile)) redirect('/subscribe')
 
   // No min-height here: <body> already fills the viewport, and a second
   // full-height box stacks into extra scroll on iOS.
@@ -42,12 +37,7 @@ export default async function ProtectedLayout({
       <Suspense fallback={null}>
         <AnalyticsProvider
           userId={user.id}
-          plan={
-            profile?.subscription_status === 'active' || profile?.subscription_status === 'past_due' ? 'paid'
-            : profile?.subscription_status === 'trialing'    ? 'trial'
-            : profile?.subscription_status === 'free_access' ? 'free_access'
-            : 'none'
-          }
+          plan={planLabel(profile)}
           language={(profile?.preferred_lang as 'en' | 'es') ?? 'en'}
         />
       </Suspense>

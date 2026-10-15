@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import type { Database } from '@/types/database.types'
+import { hasAccess } from '@/lib/access'
 
 // Routes that require authentication
 const PROTECTED_PREFIXES = [
@@ -76,14 +77,7 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const isActive =
-      profile?.subscription_status === 'active' ||
-      profile?.subscription_status === 'trialing' ||
-      (profile?.subscription_status === 'free_access' &&
-        profile.subscription_expires_at &&
-        new Date(profile.subscription_expires_at) > new Date())
-
-    if (!isActive) {
+    if (!hasAccess(profile)) {
       const subscribeUrl = request.nextUrl.clone()
       subscribeUrl.pathname = '/subscribe'
       return NextResponse.redirect(subscribeUrl)
