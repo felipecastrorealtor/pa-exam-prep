@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Icon from '@/components/ui/Icon'
 import { track } from '@/lib/analytics'
+import { TRIAL_DAYS } from '@/lib/plan'
 
 interface SubInfo {
   isSubscribed: boolean
@@ -443,7 +444,7 @@ export default function SubscribePage() {
                   </div>
                   <ul className="text-sm text-slate-400 space-y-2 pt-1">
                     {([
-                      trialUsed !== true ? '7-day free trial — no charge today' : null,
+                      trialUsed !== true ? `${TRIAL_DAYS}-day free trial — no charge today` : null,
                       '440 practice questions across 22 units',
                       'Flashcards with spaced repetition',
                       'AI-powered explanations',
@@ -497,7 +498,7 @@ export default function SubscribePage() {
                       disabled={loading}
                       className="btn-primary w-full"
                     >
-                      {pending === 'trial' ? 'Redirecting to checkout…' : 'Start my 7-day free trial →'}
+                      {pending === 'trial' ? 'Redirecting to checkout…' : `Start my ${TRIAL_DAYS}-day free trial →`}
                     </button>
 
                     <button

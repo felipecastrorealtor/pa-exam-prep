@@ -51,8 +51,22 @@ export function hasAccess(profile: AccessProfile | null | undefined): boolean {
     return new Date(profile.subscription_expires_at).getTime() > Date.now()
   }
 
-  // free_access already returned above; what is left is the Stripe statuses.
-  return status === 'active' || status === 'trialing' || status === 'past_due'
+  if (status === 'trialing') {
+    // A trial that never ends is not a trial. This check was missing, and
+    // seventeen accounts whose trial expired in September still had full
+    // access a month later.
+    //
+    // Two kinds of trial end up in this column and they are told apart by the
+    // date. A Stripe trial carries none — the webhook writes null and Stripe
+    // itself closes it by sending `canceled`, so trusting the status alone is
+    // right there. A trial granted by the app carries an expiry date, and that
+    // date is the entire point of it.
+    if (!profile.subscription_expires_at) return true
+    return new Date(profile.subscription_expires_at).getTime() > Date.now()
+  }
+
+  // free_access and trialing already returned above.
+  return status === 'active' || status === 'past_due'
 }
 
 // What the person is told they are on, which is not the same question as

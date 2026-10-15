@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { track } from '@/lib/analytics'
+import { TRIAL_DAYS } from '@/lib/plan'
 
 export const dynamic = 'force-dynamic'
 
@@ -122,7 +123,7 @@ function RegisterForm() {
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text)', margin: 0 }}>Create your account</h2>
         <p style={{ color: 'var(--text3)', fontSize: '0.82rem', marginTop: 4 }}>
-          7-day free trial · No credit card required to start.
+          {TRIAL_DAYS}-day free trial · No credit card required to start.
         </p>
       </div>
 
@@ -245,7 +246,7 @@ function RegisterForm() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          7-day free trial — explore everything
+          {TRIAL_DAYS}-day free trial — explore everything
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>

@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { TRIAL_DAYS } from '@/lib/plan'
 
 // Server-side Stripe client — never import in client components
 // This account is on Stripe Managed Payments, which the API rejects on any
@@ -16,7 +17,7 @@ export const PLANS = {
     amount: 2000, // $20.00 in cents
     interval: 'month' as const,
     label: 'Monthly',
-    trialDays: 7,
+    trialDays: TRIAL_DAYS,
   },
 } as const
 
@@ -68,6 +69,20 @@ export async function createCheckoutSession({
 
   if (withTrial) {
     params.subscription_data!.trial_period_days = PLANS.monthly.trialDays
+
+    // The site promises "no credit card required to start", so don't ask for
+    // one. Stripe only collects a payment method when money is due now, and
+    // during a trial none is.
+    params.payment_method_collection = 'if_required'
+
+    // Which leaves a trial that can reach its end with no way to charge.
+    // Without this, Stripe keeps the subscription and marks it past_due — and
+    // past_due still grants access, so the trial would quietly become free
+    // forever. Cancelling is the honest end: the webhook writes `canceled`
+    // and access stops.
+    params.subscription_data!.trial_settings = {
+      end_behavior: { missing_payment_method: 'cancel' },
+    }
   }
 
   // Only apply the internal coupon when one is actually configured; passing an

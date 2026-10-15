@@ -6,6 +6,7 @@ import { loadDashboard, PASS_SCORE, type Period } from '@/lib/admin/dashboard'
 import StatCard from '@/components/admin/StatCard'
 import TrendChart from '@/components/admin/TrendChart'
 import RecentUsersTable from '@/components/admin/RecentUsersTable'
+import { TRIAL_DAYS } from '@/lib/plan'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 export const dynamic = 'force-dynamic'
@@ -104,7 +105,7 @@ export default async function AdminDashboard({
         <StatCard
           label="Active trials" accent="violet"
           value={u ? String(u.trialing) : '—'}
-          hint="Accounts inside the 7-day Stripe trial right now."
+          hint={`Accounts inside the ${TRIAL_DAYS}-day Stripe trial right now.`}
           empty={u && u.trialing === 0 ? 'No trials running' : null}
         />
         <StatCard

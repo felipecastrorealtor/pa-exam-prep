@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import ScreenTour from '@/components/landing/ScreenTour'
+import { TRIAL_DAYS } from '@/lib/plan'
 
 type Lang = 'en' | 'es'
 
@@ -161,10 +162,10 @@ const FEATURES_ES: Feature[] = [
 const T = {
   en: {
     navSignIn: 'Sign in', navSignUp: 'Sign up',
-    heroBadge: '7-day free trial · No credit card required',
+    heroBadge: `${TRIAL_DAYS}-day free trial · No credit card required`,
     heroH1a: 'Get Ready to Pass the', heroH1b: 'PA Real Estate Exam',
     heroSub: '440 practice questions with bilingual explanations, spaced-repetition flashcards, AI tutoring, and progress tracking — everything you need to walk in confident.',
-    heroCta: 'Start 7-day free trial →', heroSignIn: 'Sign in',
+    heroCta: `Start ${TRIAL_DAYS}-day free trial →`, heroSignIn: 'Sign in',
     heroPriceNote: '$20/month after trial · Cancel anytime',
     statsQ: 'Practice questions', statsU: 'Exam units covered', statsB: 'Bilingual EN + ES',
     featHeading: 'Everything you need to pass',
@@ -174,12 +175,12 @@ const T = {
     unitsSub: 'Matching the official PA Real Estate exam blueprint',
     unitsMore: '…and 10 more units', units: UNITS_EN,
     pricingHeading: 'Simple pricing', pricingSub: 'One plan. Everything included. Cancel anytime.',
-    freePlan: 'Free Trial', freeDuration: '7 days', freeNote: 'No credit card required',
+    freePlan: 'Free Trial', freeDuration: `${TRIAL_DAYS} days`, freeNote: 'No credit card required',
     freeFeatures: ['All 440 questions','Flashcards & glossary','Progress tracking','Bilingual EN/ES'],
     freeCta: 'Start free →',
     paidPlan: 'Monthly', paidPrice: '$20', paidPer: '/month', paidBadge: 'Most popular',
     paidFeatures: ['Everything in free trial','AI explanations (Gemini)','Unlimited sessions','Cross-device sync'],
-    paidCta: 'Start 7-day trial →',
+    paidCta: `Start ${TRIAL_DAYS}-day trial →`,
     accessCode: 'Have an access code?', accessCodeLink: 'Enter it at registration',
     ctaHeading: 'Ready to pass your exam?',
     ctaSub: 'Join students preparing for the Pennsylvania Real Estate license exam. Start your free trial today — no credit card needed.',
@@ -188,10 +189,10 @@ const T = {
   },
   es: {
     navSignIn: 'Iniciar sesión', navSignUp: 'Registrarse',
-    heroBadge: 'Prueba de 7 días · Sin tarjeta de crédito',
+    heroBadge: `Prueba de ${TRIAL_DAYS} días · Sin tarjeta de crédito`,
     heroH1a: 'Prepárate para Pasar el', heroH1b: 'Examen Inmobiliario de PA',
     heroSub: '440 preguntas de práctica con explicaciones bilingües, flashcards de repetición espaciada, tutoría con IA y seguimiento de progreso — todo lo que necesitas para entrar con confianza.',
-    heroCta: 'Comenzar prueba de 7 días →', heroSignIn: 'Iniciar sesión',
+    heroCta: `Comenzar prueba de ${TRIAL_DAYS} días →`, heroSignIn: 'Iniciar sesión',
     heroPriceNote: '$20/mes después de la prueba · Cancela en cualquier momento',
     statsQ: 'Preguntas de práctica', statsU: 'Unidades del examen', statsB: 'Bilingüe EN + ES',
     featHeading: 'Todo lo que necesitas para aprobar',
@@ -201,12 +202,12 @@ const T = {
     unitsSub: 'Según el esquema oficial del examen inmobiliario de PA',
     unitsMore: '…y 10 unidades más', units: UNITS_ES,
     pricingHeading: 'Precios simples', pricingSub: 'Un plan. Todo incluido. Cancela en cualquier momento.',
-    freePlan: 'Prueba Gratuita', freeDuration: '7 días', freeNote: 'Sin tarjeta de crédito requerida',
+    freePlan: 'Prueba Gratuita', freeDuration: `${TRIAL_DAYS} días`, freeNote: 'Sin tarjeta de crédito requerida',
     freeFeatures: ['Las 440 preguntas','Flashcards y glosario','Seguimiento de progreso','Bilingüe EN/ES'],
     freeCta: 'Comenzar gratis →',
     paidPlan: 'Mensual', paidPrice: '$20', paidPer: '/mes', paidBadge: 'Más popular',
     paidFeatures: ['Todo en la prueba gratuita','Explicaciones con IA (Gemini)','Sesiones ilimitadas','Sincronización multidispositivo'],
-    paidCta: 'Comenzar prueba de 7 días →',
+    paidCta: `Comenzar prueba de ${TRIAL_DAYS} días →`,
     accessCode: '¿Tienes un código de acceso?', accessCodeLink: 'Ingrésalo al registrarte',
     ctaHeading: '¿Listo para pasar tu examen?',
     ctaSub: 'Únete a los estudiantes que se preparan para el examen de licencia inmobiliaria de Pensilvania. Comienza tu prueba gratuita hoy — sin tarjeta de crédito.',
