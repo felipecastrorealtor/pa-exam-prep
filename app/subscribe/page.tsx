@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Icon from '@/components/ui/Icon'
 import { track } from '@/lib/analytics'
-import { TRIAL_DAYS } from '@/lib/plan'
+import { TRIAL_DAYS, PRICE_USD } from '@/lib/plan'
 
 interface SubInfo {
   isSubscribed: boolean
@@ -481,14 +481,14 @@ export default function SubscribePage() {
                   <div className="space-y-3">
                     <p className="text-xs text-slate-500 leading-relaxed">
                       Your previous free trial has already been used. You can subscribe
-                      immediately for $20/month.
+                      immediately for {`$${PRICE_USD}`}/month.
                     </p>
                     <button
                       onClick={() => startCheckout(false)}
                       disabled={loading}
                       className="btn-primary w-full"
                     >
-                      {pending === 'paid' ? 'Redirecting to checkout…' : 'Subscribe now — $20/month'}
+                      {pending === 'paid' ? 'Redirecting to checkout…' : `Subscribe now — $${PRICE_USD}/month`}
                     </button>
                   </div>
                 ) : (
@@ -501,15 +501,31 @@ export default function SubscribePage() {
                       {pending === 'trial' ? 'Redirecting to checkout…' : `Start my ${TRIAL_DAYS}-day free trial →`}
                     </button>
 
+                    {/* The same checkout without the trial. This button already
+                        existed, but it read "Already used your free trial?" —
+                        which made paying now look like the consolation prize
+                        for someone who had burnt their trial, rather than a
+                        choice anyone is free to make. */}
+                    <div className="flex items-center gap-3" aria-hidden="true">
+                      <span className="h-px flex-1 bg-slate-800" />
+                      <span className="text-xs text-slate-600 font-medium">or</span>
+                      <span className="h-px flex-1 bg-slate-800" />
+                    </div>
+
                     <button
                       onClick={() => startCheckout(false)}
                       disabled={loading}
-                      className="w-full text-center text-sm text-slate-400 hover:text-slate-200 border border-slate-700 hover:border-slate-500 rounded-xl px-4 py-3 leading-snug transition-colors disabled:opacity-50"
+                      className="w-full text-center text-sm font-semibold text-slate-200 border border-slate-700 hover:border-slate-500 hover:bg-slate-900/60 rounded-xl px-4 py-3 leading-snug transition-colors disabled:opacity-50"
                     >
                       {pending === 'paid'
                         ? 'Redirecting to checkout…'
-                        : 'Already used your free trial? Subscribe now — $20/month'}
+                        : `Skip the trial — subscribe now for $${PRICE_USD}/month`}
                     </button>
+
+                    <p className="text-xs text-slate-500 leading-relaxed text-center">
+                      Paying now starts your subscription today instead of in{' '}
+                      {TRIAL_DAYS} days. Same access either way — cancel anytime.
+                    </p>
                   </div>
                 )}
               </div>
